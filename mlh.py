@@ -5,31 +5,69 @@ import argparse
 from Persist import *
 from Appointment import Appointment
 from version import __version__
-from Utils import error
+from Utils import *
 from datetime import datetime
 
+def validate_children(children, persist):
+    if type(children) not list:
+        raise TypeError
+
+    if not children:
+        count = int_input('How many children would you like to book? ', 1, 20)
+
+        for child in range(count):
+            while True:
+                name = input_with_quit('Please enter the name for child {}'.format(child + 1))
+                if name not in persist.user_data.children:
+                    print('{} not a valid child name'.format(name))
+                else:
+                    break
+
+            children.append(name)
+
+def validate_datetime(args):
+    while True:
+        if not args.date:
+            args.date = input_with_quit('Please enter the date you would like to book (YYYYMMDD): ')
+
+        if not args.time:
+            args.time = input_with_quit('Please enter the time you would like to book (HHMM): ')
+
+        # Combine args.data and args.time into a DateTime object
+        dt = '{} {}'.format(args.date, args.time)
+        try:
+            args.dt = datetime.strptime(dt, '%Y%m%D %H%M')
+            break
+        except:
+            print('Unable to parse data and time of appointment.')
+            args.date = args.time = None
+
+def validate_duration(duration):
+    duration_str = ', '.join([str(dur) for dur in Appointment.durations.keys()])
+    while True:
+        if not duration:
+            duration = int_input('Please enter the duration of the appointment ({}): '.format(
+                duration_str))
+
+        if duration not in Appointment.durations:
+            print('Appointment duration must be either {} minutes'.format(duration_str))
+            duration = None
+        else:
+            break
+
 def validate_args(args, persist):
-    if args.children and (not args.date or not args.time or not args.duration):
-        error('''An appointment requires at least one child, a date, a time, and
-            a duration.''')
+    if args.execute: 
+        if not args.children and not args.date and not args.time and not args.duration:
+            # User wants to book appointments in persistant store
+            return
 
-    # Children should contain child info from persistant data
-    for child in args.children:
-        if child not in persist.user_data.children:
-            error('{} not a valid child name')
+    # User wants to book a specific appointment
+    # We need to make sure that all arguments are completed
+    validate_children(args.children, persist)
 
-    args.children = {child:persist.user_data.children[child] for child in args.children}
+    validate_datetime(args)
 
-    # Combine args.data and args.time into a DateTime object
-    dt = '{} {}'.format(args.date, args.time)
-    try:
-        args.dt = datetime.strptime(dt, '%Y%m%D %H%M')
-    except:
-        error('Unable to parse data and time of appointment')
-
-    if args.duration not in Appointment.durations:
-        error('Appointment duration must be either {} minutes'.format(
-            ', '.join([str(dur) for dur in Appointment.durations.keys()])))
+    validate_duration(args.duration)
 
     return args
 
@@ -65,6 +103,7 @@ def main(args):
 
     if not args.execute: # We want to schedule an appointment
         store.appointments.append(Schedule(datetime=args.dt, children=args.children)) 
+        p.set_data()
     
     else: 
         if args.children: # We want to book this appointment immediately
@@ -72,7 +111,10 @@ def main(args):
             Appointment(store, appt)
         else: # book all available scheduled appointments
             for appt in store.appointments:
-                Appointment(store, appt)
+                try:
+                    book = Appointment(store, appt)
+                except RuntimeError:
+                    pass
 
 
 if __name__ == '__main__':

@@ -24,8 +24,7 @@ class Persist:
         # TODO get directory of python script
         if not self.file.exists():
             self._populate_user_data()
-            with self.file.open('wb') as f:
-                pickle.dump(self.store, f)
+            self.set_data()
         else:
             with self.file.open('rb') as f:
                 self.store = pickle.load(f)
@@ -82,6 +81,11 @@ class Persist:
                                     password = self._get_password(), 
                                     children = self._get_children()))
 
-    def get_data():
+    def get_data(self):
         return self.store
+
+    def set_data(self):
+        with self.file.open('wb') as f:
+            pickle.dump(self.store, f)
+        
         
