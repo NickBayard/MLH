@@ -113,6 +113,8 @@ def main(args):
             for appt in store.appointments:
                 try:
                     book = Appointment(store, appt)
+                    if book.update_store():
+                        p.set_data()
                 except RuntimeError:
                     pass
 

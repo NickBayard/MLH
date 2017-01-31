@@ -30,6 +30,7 @@ class Appointment:
         self.parser = Parser()
 
         self.persist = store
+        self.is_store_updated = False
         self.appoinment = appt
 
         self.book()
@@ -45,6 +46,9 @@ class Appointment:
         self.finalize_appointment()
 
         #TODO verify that appointment link is present
+
+    def update_store(self):
+        return self.is_store_updated
 
     def post(self, data, update=True):
         if update:
@@ -120,6 +124,7 @@ class Appointment:
             error('Unable to parse childd ids')
 
         #TODO add child ids to persistant store
+        self.is_store_updated = True
 
         try:
             self.available_dates = self.parser.get_available_dates(text,)
