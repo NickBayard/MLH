@@ -30,7 +30,6 @@ class Appointment:
         90: '975'}
 
     def __init__(self, store, appt):
-        #TODO add appointment info
         self.session = requests.Session()
         self.parser = Parser()
 
@@ -39,7 +38,7 @@ class Appointment:
         self.appoinment = appt
 
     def book(self):
-        # may need to book multiple appointments if we are 
+        # TODO  need to book multiple appointments if we are 
         # booking children and infants
         self.login()
         self.set_duration()
@@ -120,13 +119,19 @@ class Appointment:
         except:
             error('Unable to set child type')
 
-        try:
-            self.child_ids = self.parser.get_child_ids(self.text)
-        except:
-            error('Unable to parse childd ids')
+        for child in self.store.user_data.children:
+            if not child.id:
+                try:
+                    self.child_ids = self.parser.get_child_ids(self.text)
+                except:
+                    error('Unable to parse child ids')
 
-        #TODO add child ids to persistant store
-        self.is_store_updated = True
+                for child in self.store.user_data.children:
+                    if child.name in self.child_ids:
+                        child.id = self.child_ids[child.name]
+                        self.is_store_updated = True
+
+                break
 
         try:
             self.available_dates = self.parser.get_available_dates(text,)
@@ -170,9 +175,9 @@ class Appointment:
             'starting_date': date,
             'date_ymd': date} 
 
-        # TODO shouldn't need to look up child ids
+        # TODO Filter for children that are being booked
         for child in self.appt.children:
-            date_data[self.child_ids[child.name]] = 'on'
+            date_data[child.id] = 'on'
         
         try:
             self.post(self.session, date_data)
