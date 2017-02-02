@@ -2,6 +2,8 @@ import re
 import bs4
 
 class Parser:
+    """Parser is essentially the web page scraper that returns various 
+    bits of information on a particular page."""
 
     @staticmethod
     def get_customer_id(text):

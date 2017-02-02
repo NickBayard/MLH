@@ -12,11 +12,19 @@ Child = namedtuple('Child', ['type', 'id'])
 Schedule = namedtuple('Schedule', ['datetime', 'children', 'duration'])
 
 class PersistantData:
+    """PersistantData contains the data structure containing information 
+    about the user account, the children and the appointents that should
+    be booked in the future.  This class gets pickled for persistance."""
+
     def __init__(self, user_data, appointments=[]):
         self.user_data = user_data #UserData
         self.appointments = appointments #list  of Schedule
 
 class Persist:
+    """Persist is in charge of managing the PersistantData class instance
+    including pickling and un-pickling the file.  It is also responsible for
+    populating the contents of the PersistantData instance the first time that
+    it is created by prompting the user."""
 
     def __init__(self, path):
         self.file = Path(path)

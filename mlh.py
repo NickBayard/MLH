@@ -2,11 +2,12 @@
 
 import pdb
 import argparse
+from datetime import datetime
+from version import __version__
 from Persist import *
 from Appointment import Appointment
-from version import __version__
 from Utils import *
-from datetime import datetime
+from AppointmentHandler import AppointmentHandler
 
 def validate_children(children, persist):
     if type(children) not list:
@@ -93,30 +94,31 @@ def parse_args():
 
     return parser.parse_args()
 
+def book_appointment(sched, persist):
+    appt = Appointment(persist.get_data(), sched)
+    handler = AppointmentHandler(appt, persist) 
+    handler.run()
 
 def main(args):
-    p = Persist('mlh.pick')
+    persist = Persist('mlh.pick')
 
-    store = p.get_data()
+    store = persist.get_data()
 
     args = validate_args(args, store)
 
     if not args.execute: # We want to schedule an appointment
         store.appointments.append(Schedule(datetime=args.dt, children=args.children)) 
-        p.set_data()
+        persist.set_data()
     
     else: 
         if args.children: # We want to book this appointment immediately
-            appt = Schedule(datetime=args.dt, children=args.children, duration=args.duration)
-            Appointment(store, appt)
+            book_appointment(Schedule(datetime=args.dt, 
+                                      children=args.children, 
+                                      duration=args.duration),
+                             persist)
         else: # book all available scheduled appointments
-            for appt in store.appointments:
-                try:
-                    book = Appointment(store, appt)
-                    if book.update_store():
-                        p.set_data()
-                except RuntimeError:
-                    pass
+            for sched in store.appointments:
+                book_appointment(sched, persist)
 
 
 if __name__ == '__main__':

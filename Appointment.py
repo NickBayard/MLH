@@ -6,6 +6,11 @@ from Parser import Parser
 from Utils import *
 
 class Appointment:
+    """The Appointment is the workhorse of this application.  It will
+    attempt to book a child sitting appointment  or appointments at 
+    the specified time while providing feedback to the AppointmentHandler
+    should there be any issues with making the booking."""
+
     url = 'https://booknow.appointment-plus.com/73kgtt5s/'
 
     post_data = {
@@ -29,11 +34,9 @@ class Appointment:
         self.session = requests.Session()
         self.parser = Parser()
 
-        self.persist = store
+        self.store = store
         self.is_store_updated = False
         self.appoinment = appt
-
-        self.book()
 
     def book(self):
         # may need to book multiple appointments if we are 
@@ -61,7 +64,6 @@ class Appointment:
         self.text = r.text
 
     def login(self):
-        # TODO Get user info from yaml file
         login_data = {
             'login_screen' : 'yes',
             'loginname' : self.store.user_data.user,
