@@ -59,7 +59,6 @@ def validate_duration(duration):
 def validate_args(args, persist):
     if not args.children and not args.date and not args.time and not args.duration:
         # User wants to book appointments in persistant store only
-        args.no_new_appt = True
         return
 
     # User wants to book a specific appointment
@@ -69,6 +68,8 @@ def validate_args(args, persist):
     validate_datetime(args)
 
     validate_duration(args.duration)
+
+    args.new_appt = True
 
     return args
 
@@ -98,16 +99,15 @@ def main(args):
 
     args = validate_args(args, store)
 
-    if not args.no_new_appt: # We want to schedule a new appointment
+    if args.new_appt: # We want to schedule a new appointment
         store.appointments.append(Schedule(datetime=args.dt, 
                                            children=args.children, 
                                            duration=args.duration)) 
         persist.set_data()
     
     # book all available scheduled appointments
-        for sched in store.appointments:
-            handler = AppointmentHandler(sched, persist) 
-            handler.run()
+    handler = AppointmentHandler(persist) 
+    handler.run()
 
 
 if __name__ == '__main__':
