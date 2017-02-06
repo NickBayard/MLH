@@ -57,10 +57,10 @@ def validate_duration(duration):
             break
 
 def validate_args(args, persist):
-    if args.execute: 
-        if not args.children and not args.date and not args.time and not args.duration:
-            # User wants to book appointments in persistant store
-            return
+    if not args.children and not args.date and not args.time and not args.duration:
+        # User wants to book appointments in persistant store only
+        args.no_new_appt = True
+        return
 
     # User wants to book a specific appointment
     # We need to make sure that all arguments are completed
@@ -79,10 +79,6 @@ def parse_args():
 
     parser.add_argument('-v', '--version', action='version', 
         version="Mother's Little Helper {}".format(__version__))
-    parser.add_argument('-e', '--execute', action='store_true', 
-        help='''When specified without any additional parameters, book all
-        available appointments that have been scheduled.  When specified
-        with parameters, book only the specified appointment.''')
     parser.add_argument('-c', dest='children', nargs='+', metavar='CHILD',
         help='''List the names of the children for this appointment.''')
     parser.add_argument('-d', dest='date', metavar='YYYYMMDD', 
@@ -94,10 +90,6 @@ def parse_args():
 
     return parser.parse_args()
 
-def book_appointment(sched, persist):
-    appt = Appointment(persist.get_data(), sched)
-    handler = AppointmentHandler(appt, persist) 
-    handler.run()
 
 def main(args):
     persist = Persist('mlh.pick')
@@ -106,19 +98,16 @@ def main(args):
 
     args = validate_args(args, store)
 
-    if not args.execute: # We want to schedule an appointment
-        store.appointments.append(Schedule(datetime=args.dt, children=args.children)) 
+    if not args.no_new_appt: # We want to schedule a new appointment
+        store.appointments.append(Schedule(datetime=args.dt, 
+                                           children=args.children, 
+                                           duration=args.duration)) 
         persist.set_data()
     
-    else: 
-        if args.children: # We want to book this appointment immediately
-            book_appointment(Schedule(datetime=args.dt, 
-                                      children=args.children, 
-                                      duration=args.duration),
-                             persist)
-        else: # book all available scheduled appointments
-            for sched in store.appointments:
-                book_appointment(sched, persist)
+    # book all available scheduled appointments
+        for sched in store.appointments:
+            handler = AppointmentHandler(sched, persist) 
+            handler.run()
 
 
 if __name__ == '__main__':
