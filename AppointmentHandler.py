@@ -2,7 +2,7 @@
 
 from Persist import *
 from Appointment import Appointment
-from datetime import datetime, timedelta, time
+from ScheduleChecker import ScheduleChecker, ScheduleError
 from copy import copy
 
 class AppointmentHandler:
@@ -12,31 +12,34 @@ class AppointmentHandler:
 
     def __init__(self, persist):
         self.persist = persist
-        self.data = self.persist.get_data()
-        self.appointments = self.data.appointments
+        self.store = self.persist.get_data()
+        self.appointments = self.store.appointments
 
-    def run(self)::
+    def run(self):
         # Copy items in appointments that can possibly be booked
-        # at this time
-        now = datetime.now()
-        last_book_date = now.date() + timedelta(days=2)
-        # TODO adjust for the end of booking times
-        last_booking = datetime.combine(last_book_date, time(hour=23, minute=59, second=59))
-
+        # at this time into self.schedule
         self.schedule = []
+        checker = ScheduleChecker()
         for index, appt in enumerate(copy(self.appointments)):
-            # TODO filter out appointments that aren't within reasonable hours
-            if appt.datetime < today:
-                # This appointment is past and needs to be purged
-                # Should only be necessary to clean up appointments
-                # that could not be successfully booked
+            # Filter out appointments that aren't within reasonable hours
+            try:
+                if checker.check(appt.datetime, appt.duration):
+                    self.schedule.append(appt)
+            except ScheduleError:
+                # This appointment has passed.  Purge from the list
                 self.appointments.pop(i)
-            elif appt.datetime <= last_booking:
-                self.schedule.append(appt)
+                
             
-        # Determine if we need to book multiple appointments
+        # TODO Determine if we need to book multiple appointments
         # (e.g. child + infant)
 
-        #self.appt.book()
-        #if self.appt.update_store():
-            #self.persist.set_data()
+
+        appt = Appointment(self.store, sched)
+        try:
+            appt.book()
+        except:
+            # TODO catch and handle Appointment exceptions
+            pass
+
+        if self.appt.update_store():
+            self.persist.set_data()
