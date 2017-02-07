@@ -36,35 +36,32 @@ class ScheduleChecker:
                    WeekDay.SAT: TimeLimit(start=time(hour=8), stop=time(hour=13)),
                    WeekDay.SUN: TimeLimit(start=time(hour=8), stop=time(hour=13))}
 
-    def __init__(self):
-        self.now = datetime.now() 
-
-        self.weekday = WeekDay(self.now.date().weekday())
-
-        #Calculate limits from this date
-        last_book_date = now.date() + timedelta(days=2)
-
-    def get_limits(self, wd):
-        return self.timeLimits[WeekDay(wd % 7)]
-
-    def check(self, appt_start, duration):
-        if appt_start < now:
+    @staticmethod
+    def check_date(appt_start):
+        if appt_start < datetime.now()
             # This appointment is past and needs to be purged
             # Should only be necessary to clean up appointments
             # that could not be successfully booked
             raise ScheduleError
         
-        # get the child appointment boundary times for today, tomorrow, and 
-        # the next day as these should all be available for booking
-        limits = []
-        for day in range(self.weekday, self.weekday + 3):
-            limits.append(self.get_limits(day))
+        # check if the appointment is valid for today, tomorrow or
+        # the next day.
+        first_date = date.today()
+        last_date = first_date + timedelta(days=2)
+        appt_date = appt_start.date()
+
+        return appt_date >= first_date and appt_date <= last_date:
+
+    @classmethod
+    def check_time(cls, appt_start, duration):
+        limit = cls.timeLimits[cls.Weekday(appt_start.date().weekday())]
 
         appt_end = appt_start + timedelta(minutes=duration)
 
-        if (appt_start >= limits[0].start and appt_end <= limits[0].stop) or
-           (appt_start >= limits[1].start and appt_end <= limits[1].stop) or
-           (appt_start >= limits[2].start and appt_end <= limits[2].stop):
-            return True
-        else:
-            return False
+        return app_start >= limit.start and appt_end <= limit.stop
+
+
+        
+
+
+        

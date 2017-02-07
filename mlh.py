@@ -8,6 +8,7 @@ from Persist import *
 from Appointment import Appointment
 from Utils import *
 from AppointmentHandler import AppointmentHandler
+from ScheduleChecker import ScheduleChecker
 
 def validate_children(children, persist):
     if type(children) not list:
@@ -38,10 +39,16 @@ def validate_datetime(args):
         dt = '{} {}'.format(args.date, args.time)
         try:
             args.dt = datetime.strptime(dt, '%Y%m%D %H%M')
-            break
         except:
             print('Unable to parse data and time of appointment.')
             args.date = args.time = None
+            continue
+
+        # Check that the appointment time slot is valid
+        if Schedulechecker.check_time(args.datetime, args.duration):
+            break
+        else:
+            print('The time {} on {} is not a valid appointment time.'.format(args.time, args.date)
 
 def validate_duration(duration):
     duration_str = ', '.join([str(dur) for dur in Appointment.durations.keys()])
@@ -65,13 +72,27 @@ def validate_args(args, persist):
     # We need to make sure that all arguments are completed
     validate_children(args.children, persist)
 
-    validate_datetime(args)
-
     validate_duration(args.duration)
+
+    validate_datetime(args)
 
     args.new_appt = True
 
     return args
+
+def split_appointments(store, args):
+    appointments = []
+
+    def get_appt_by_type(type):
+        names = [name for name, info in store.user_data.children.items() if info.type == type and name in args.children]
+
+        if names:
+            appointments.append(Schedule(datetime=args.dt, children=names, duration=args.duration))
+
+    get_appt_by_type('child')
+    get_appt_by_type('infant')
+
+    return appointments
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -100,9 +121,11 @@ def main(args):
     args = validate_args(args, store)
 
     if args.new_appt: # We want to schedule a new appointment
-        store.appointments.append(Schedule(datetime=args.dt, 
-                                           children=args.children, 
-                                           duration=args.duration)) 
+        # If an appointment was specified with children and infants, 
+        # it needs to be split into separate appointments
+        for sched in split_appointments(store, args):
+            store.appointments.append(sched)
+
         persist.set_data()
     
     # book all available scheduled appointments

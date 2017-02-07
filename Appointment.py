@@ -38,8 +38,6 @@ class Appointment:
         self.appoinment = appt
 
     def book(self):
-        # TODO  need to book multiple appointments if we are 
-        # booking children and infants
         self.login()
         self.set_duration()
         self.select_child_type()
@@ -175,7 +173,6 @@ class Appointment:
             'starting_date': date,
             'date_ymd': date} 
 
-        # TODO Filter for children that are being booked
         for child in self.appt.children:
             date_data[child.id] = 'on'
         
