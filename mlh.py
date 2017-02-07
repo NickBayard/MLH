@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
+# -*- coding: utf-8 -*-
 
-import pdb
 import argparse
 from datetime import datetime
 from version import __version__
@@ -10,8 +10,9 @@ from Utils import *
 from AppointmentHandler import AppointmentHandler
 from ScheduleChecker import ScheduleChecker
 
+
 def validate_children(children, persist):
-    if type(children) not list:
+    if type(children) is not list:
         raise TypeError
 
     if not children:
@@ -26,6 +27,7 @@ def validate_children(children, persist):
                     break
 
             children.append(name)
+
 
 def validate_datetime(args):
     while True:
@@ -45,10 +47,11 @@ def validate_datetime(args):
             continue
 
         # Check that the appointment time slot is valid
-        if Schedulechecker.check_time(args.datetime, args.duration):
+        if ScheduleChecker.check_time(args.datetime, args.duration):
             break
         else:
-            print('The time {} on {} is not a valid appointment time.'.format(args.time, args.date)
+            print('The time {} on {} is not a valid appointment time.'.format(args.time, args.date))
+
 
 def validate_duration(duration):
     duration_str = ', '.join([str(dur) for dur in Appointment.durations.keys()])
@@ -62,6 +65,7 @@ def validate_duration(duration):
             duration = None
         else:
             break
+
 
 def validate_args(args, persist):
     if not args.children and not args.date and not args.time and not args.duration:
@@ -80,6 +84,7 @@ def validate_args(args, persist):
 
     return args
 
+
 def split_appointments(store, args):
     appointments = []
 
@@ -94,21 +99,22 @@ def split_appointments(store, args):
 
     return appointments
 
+
 def parse_args():
     parser = argparse.ArgumentParser(
-                description='''Utility for advanced booking of child sitting 
+                description='''Utility for advanced booking of child sitting
                 appointments at Paul Derda Recreation Center''')
 
-    parser.add_argument('-v', '--version', action='version', 
-        version="Mother's Little Helper {}".format(__version__))
+    parser.add_argument('-v', '--version', action='version',
+                        version="Mother's Little Helper {}".format(__version__))
     parser.add_argument('-c', dest='children', nargs='+', metavar='CHILD',
-        help='''List the names of the children for this appointment.''')
-    parser.add_argument('-d', dest='date', metavar='YYYYMMDD', 
-        help='''Specify the date to book.''')
+                        help='''List the names of the children for this appointment.''')
+    parser.add_argument('-d', dest='date', metavar='YYYYMMDD',
+                        help='''Specify the date to book.''')
     parser.add_argument('-t', dest='time', metavar='HHMM',
-        help='''Specify the time to book.  HH is 00-23.''')
-    parser.add_argument('-r', dest='duration', metavar='MINUTES', type=int, 
-        default=90, help='''Specfiy the duration of the appointment.''')
+                        help='''Specify the time to book.  HH is 00-23.''')
+    parser.add_argument('-r', dest='duration', metavar='MINUTES', type=int,
+                        default=90, help='''Specfiy the duration of the appointment.''')
 
     return parser.parse_args()
 
@@ -120,16 +126,16 @@ def main(args):
 
     args = validate_args(args, store)
 
-    if args.new_appt: # We want to schedule a new appointment
-        # If an appointment was specified with children and infants, 
+    if args.new_appt:  # We want to schedule a new appointment
+        # If an appointment was specified with children and infants,
         # it needs to be split into separate appointments
         for sched in split_appointments(store, args):
             store.appointments.append(sched)
 
         persist.set_data()
-    
+
     # book all available scheduled appointments
-    handler = AppointmentHandler(persist) 
+    handler = AppointmentHandler(persist)
     handler.run()
 
 

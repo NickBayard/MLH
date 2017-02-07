@@ -1,5 +1,3 @@
-#! /usr/bin/env python3
-
 from datetime import datetime, timedelta, time
 from enum import Enum
 from collections import namedtuple

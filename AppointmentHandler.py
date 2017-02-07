@@ -1,5 +1,3 @@
-#! /usr/bin/env python3
-
 from Persist import *
 from Appointment import Appointment
 from ScheduleChecker import ScheduleChecker, ScheduleError
