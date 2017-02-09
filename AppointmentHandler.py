@@ -26,15 +26,14 @@ class AppointmentHandler:
                 # This appointment has passed.  Purge from the list
                 self.appointments.pop(i)
                 
-        for sched in schedule:
-            appt = Appointment(self.store, sched)
+        appt = Appointment(self.store, schedule)
 
-            try:
-                appt.book()
-            except:
-                # TODO catch and handle Appointment exceptions
-                pass
+        try:
+            appt.book()
+        except:
+            # TODO catch and handle Appointment exceptions
+            pass
 
-            if self.appt.update_store():
-                self.persist.set_data()
-                self.store = self.persist.get_data()
+        if self.appt.update_store():
+            self.persist.set_data()
+            self.store = self.persist.get_data()

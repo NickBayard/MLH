@@ -73,7 +73,7 @@ class Persist:
                 else:
                     type = 'child' if type == 'c' else 'infant'
                     break
-            children[name] = Child(type, 0)
+            children[name] = Child(type, None)
 
         return children
 

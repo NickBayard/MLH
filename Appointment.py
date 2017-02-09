@@ -5,6 +5,21 @@ from datetime import date as datedate
 from Parser import Parser
 from Utils import *
 
+class AppointmentError(Exception):
+    pass
+
+class LoginError(AppointmentError):
+    pass
+
+class DurationError(AppointmentError):
+    pass
+
+class ChildTypeError(AppointmentError):
+    pass
+
+class NoAvailableDatesError(AppointmentError):
+    pass
+
 class Appointment:
     """The Appointment is the workhorse of this application.  It will
     attempt to book a child sitting appointment  or appointments at 
@@ -29,21 +44,22 @@ class Appointment:
         60: '974',
         90: '975'}
 
-    def __init__(self, store, appt):
+    def __init__(self, store, appointments):
         self.session = requests.Session()
         self.parser = Parser()
 
         self.store = store
         self.is_store_updated = False
-        self.appoinment = appt
+        self.appoinments = appointments
 
     def book(self):
         self.login()
-        self.set_duration()
-        self.select_child_type()
-        self.select_date()
-        self.select_time()
-        self.finalize_appointment()
+        for self.appt in self.appointments:
+            self.set_duration()
+            self.select_child_type()
+            self.select_date()
+            self.select_time()
+            self.finalize_appointment()
 
         #TODO verify that appointment link is present
 
@@ -71,12 +87,9 @@ class Appointment:
         try:
             self.post(self.session, login_data, update=False)
         except:
-            error('Unable to log in')
+            raise LoginError
 
-        try:    
-            self.post_data['customer_id'] = self.parser.get_customeid(self.text)
-        except:
-            error('Could not parse customer id')
+        self.post_data['customer_id'] = self.parser.get_customer_id(self.text)
 
     def set_duration(self):
         duration_data = {
@@ -103,38 +116,39 @@ class Appointment:
         try:
             self.post(self.session, duration_data, update=False)
         except:
-            error('Unable to set duration of appointment')
+            raise DurationError
 
-    def select_child_type(self, child_type):
+    def select_child_type(self):
         child_types = {
             'child' : '782',
             'infant' : '783'}
 
-        child_data = {'e_id' : child_types.get(child_type, child_types['child'])}
+        # Grab the first child name from the appointment list and use that
+        # as the key to the user_data.children dictionary to look up the type
+        child_type = self.store.user_data.children[self.appt.children[0]].type
+        child_data = {'e_id' : child_types[child_type]}
 
         try:
             self.post(self.session, child_data)
         except:
-            error('Unable to set child type')
+            raise ChildTypeError
 
+        self.child_ids = None
         for child in self.store.user_data.children:
             if not child.id:
-                try:
-                    self.child_ids = self.parser.get_child_ids(self.text)
-                except:
-                    error('Unable to parse child ids')
-
-                for child in self.store.user_data.children:
-                    if child.name in self.child_ids:
-                        child.id = self.child_ids[child.name]
-                        self.is_store_updated = True
-
+                self.child_ids = self.parser.get_child_ids(self.text)
                 break
 
-        try:
-            self.available_dates = self.parser.get_available_dates(text,)
-        except:
-            error('No dates available for booking at this time')
+        if self.child_ids:
+            for child in self.store.user_data.children:
+                if child.name in self.child_ids:
+                    child.id = self.child_ids[child.name]
+                    self.is_store_updated = True
+
+        self.available_dates = self.parser.get_available_dates(text)
+
+        if not self.available_dates:
+            raise NoAvailableDatesError
 
     @staticmethod
     def surrounding_dates(date):
@@ -155,7 +169,8 @@ class Appointment:
         return previous.strftime(format), next.strftime(format)
 
     def select_date(self):
-        # TODO use appt.dt
+        for date in self.available_dates:
+            # TODO Raise exception to let handler know that we can't book this date
         date = self.available_dates[-1] #TODO book latest date for now
         prev_date, next_date = Appointment.surrounding_dates(date)
 
@@ -182,10 +197,7 @@ class Appointment:
             error('Unable to select date')
 
         #TODO the time needs to be specified using appt.dt
-        try:
-            self.time_data = self.parser.get_time_data(self.text)
-        except:
-            error('Unable to parse time data')
+        self.available_times = self.parser.get_available_timese(self.text)
             
     def select_time(self):
         try:
