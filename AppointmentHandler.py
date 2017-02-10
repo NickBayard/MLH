@@ -13,6 +13,12 @@ class AppointmentHandler:
         self.store = self.persist.get_data()
         self.appointments = self.store.appointments
 
+    def handle_error(self, error):
+        pass
+
+    def handle_result(self, result):
+        pass
+
     def run(self):
         # Copy items in appointments that can possibly be booked
         # at this time into schedule
@@ -28,11 +34,11 @@ class AppointmentHandler:
                 
         appt = Appointment(self.store, schedule)
 
-        try:
-            appt.book()
-        except:
-            # TODO catch and handle Appointment exceptions
-            pass
+        for result, error in appt.book():
+            if error:
+                self.handle_error(error)
+            elif result:
+                self.handle_result(result)
 
         if self.appt.update_store():
             self.persist.set_data()

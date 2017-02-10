@@ -1,6 +1,6 @@
 import sys
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 from datetime import date as datedate
 from Parser import Parser
 from Utils import *
@@ -17,7 +17,10 @@ class DurationError(AppointmentError):
 class ChildTypeError(AppointmentError):
     pass
 
-class NoAvailableDatesError(AppointmentError):
+class SelectDateError(AppointmentError):
+    pass
+
+class UnableToBookAppointmentError(AppointmentError):
     pass
 
 class Appointment:
@@ -50,16 +53,25 @@ class Appointment:
 
         self.store = store
         self.is_store_updated = False
-        self.appoinments = appointments
+        self.appointments = appointments
 
     def book(self):
+        first_pass = True
         self.login()
         for self.appt in self.appointments:
             self.set_duration()
             self.select_child_type()
-            self.select_date()
-            self.select_time()
-            self.finalize_appointment()
+
+            if first_pass:
+                first_pass = False
+                self.collect_available_times()
+
+            if self.appt.dt in self.available_times:
+                self.select_date()
+                self.select_time()
+                self.finalize_appointment()
+            else:
+                raise UnableToBookAppointmentError
 
         #TODO verify that appointment link is present
 
@@ -145,34 +157,27 @@ class Appointment:
                     child.id = self.child_ids[child.name]
                     self.is_store_updated = True
 
-        self.available_dates = self.parser.get_available_dates(text)
+    def collect_available_times(self):
+        available_dates = self.parser.get_available_dates(text)
 
-        if not self.available_dates:
-            raise NoAvailableDatesError
+        self.available_times = []
 
-    @staticmethod
-    def surrounding_dates(date):
-        format = '%Y%m%d'
-        d = datetime.strptime(date, format)
-        
-        # calculate previous month
-        year = d.year - 1 if d.month == 1 else d.year
-        month = 12 if d.month == 1 else d.month - 1
-        day = 1
-        previous = datedate(year, month, day)
+        for date in available_dates:
+            self.select_date(date)
+            formatted_times = self.parser.get_available_times(self.text)
+            self.available_times.extend([datetime(year=date.year, 
+                            month=date.month, 
+                            day=date.month, 
+                            hour=int(time/60), 
+                            minute=time%60) 
+                    for time in formatted_times])
 
-        #calculate next month
-        year = d.year + 1 if d.month == 12 else d.year
-        month = 1 if d.month == 12 else d.month + 1
-        next = datedate(year, month, day)
-
-        return previous.strftime(format), next.strftime(format)
-
-    def select_date(self):
-        for date in self.available_dates:
-            # TODO Raise exception to let handler know that we can't book this date
-        date = self.available_dates[-1] #TODO book latest date for now
-        prev_date, next_date = Appointment.surrounding_dates(date)
+    def select_date(self, date):
+        prev_date = date - timedelta(days=1)
+        prev_date = prev_date.strftime('%Y%m%d')
+        next_date = date + timedelta(days=1)
+        next_date = next_date.strftime('%Y%m%d')
+        this_date = date.strftime('%Y%m%d')
 
         date_data = {
             'action': 'viewappts',
@@ -185,8 +190,8 @@ class Appointment:
             'view_next_month': '', 
             'next_date': next_date,
             'prev_date': prev_date,
-            'starting_date': date,
-            'date_ymd': date} 
+            'starting_date': this_date,
+            'date_ymd': this_date} 
 
         for child in self.appt.children:
             date_data[child.id] = 'on'
@@ -194,11 +199,9 @@ class Appointment:
         try:
             self.post(self.session, date_data)
         except:
-            error('Unable to select date')
+            raise SelectDateError(date)
 
-        #TODO the time needs to be specified using appt.dt
-        self.available_times = self.parser.get_available_timese(self.text)
-            
+    #TODO Do this thing
     def select_time(self):
         try:
             self.post(self.session, self.time_data, update=False)
@@ -210,6 +213,7 @@ class Appointment:
         except:
             error('Unable to parse finalization data')
 
+    #TODO Do this thing
     def finalize_appointment(self):
         try:
             self.post(self.session, self.final_data, update=False)

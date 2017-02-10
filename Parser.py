@@ -50,16 +50,16 @@ class Parser:
         soup = bs4.BeautifulSoup(text, 'lxml')
 
         dates = soup.find_all('td', {'class':'calendar-available'})
-        if not dates:
-            raise ParseAvailableDatesError
-
         links = [date.find('a')['href'] for date in dates]
         
         open_dates = []
         for link in links:
             m = re.search("dosubmit\('(\d{8})',", link) 
             if m:
-                open_dates.append(datetime.strptime(m.group(1), '%Y%m%D'))
+                open_dates.append(datetime.strptime(m.group(1), '%Y%m%d'))
+
+        if not open_dates:
+            raise ParseAvailableDatesError
 
         return open_dates
 
@@ -69,10 +69,10 @@ class Parser:
 
         times = soup.find_all('form', {'name':'gridSubmitForm'})
 
-        available_times = [time.find('input',{'name':'appt_start_time'})['value'] for
+        formatted_times = [time.find('input',{'name':'appt_start_time'})['value'] for
             time in times]
 
-        return available_times
+        return formatted_times
 
     @staticmethod
     def get_final_data(text):
