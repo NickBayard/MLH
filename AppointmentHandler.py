@@ -1,4 +1,4 @@
-from Persist import *
+#from Persist import *
 from Appointment import Appointment
 from ScheduleChecker import ScheduleChecker, ScheduleError
 from copy import copy

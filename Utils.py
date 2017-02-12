@@ -12,14 +12,13 @@ def int_input(txt, min, max):
             print('Response is not valid. Please try again.')
             continue
 
-        if range:
-            if response > max or response < min:
-                print('Response outside of acceptable range.')
-                continue
-            else:   
-                break
-        else:
+        if response > max or response < min:
+            print('Response outside of acceptable range.')
+            continue
+        else:   
             break
+
+    return response
 
 def input_with_quit(txt):
     response = input(txt)

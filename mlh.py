@@ -1,12 +1,13 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import pdb
 import argparse
 from datetime import datetime
 from version import __version__
-from Persist import *
+from Persist import Persist
 from Appointment import Appointment
-from Utils import *
+from Utils import int_input, input_with_quit
 from AppointmentHandler import AppointmentHandler
 from ScheduleChecker import ScheduleChecker
 
@@ -89,10 +90,11 @@ def split_appointments(store, args):
     appointments = []
 
     def get_appt_by_type(type):
-        names = [name for name, info in store.user_data.children.items() if info.type == type and name in args.children]
+        names = [name for name, info in store.user_data.children.items() 
+                 if info.type == type and name in args.children]
 
         if names:
-            appointments.append(Schedule(datetime=args.dt, children=names, duration=args.duration))
+            appointments.append(Schedule(datetime=args.dt, duration=args.duration, children=names))
 
     get_appt_by_type('child')
     get_appt_by_type('infant')
@@ -120,6 +122,7 @@ def parse_args():
 
 
 def main(args):
+    pdb.set_trace()
     persist = Persist('mlh.pick')
 
     store = persist.get_data()

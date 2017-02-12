@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, time
 from enum import Enum
 from collections import namedtuple
 
-class ScheduleError(exception):
+class ScheduleError(Exception):
     pass
 
 class ScheduleChecker:
@@ -36,7 +36,7 @@ class ScheduleChecker:
 
     @staticmethod
     def check_date(appt_start):
-        if appt_start < datetime.now()
+        if appt_start < datetime.now():
             # This appointment is past and needs to be purged
             # Should only be necessary to clean up appointments
             # that could not be successfully booked
@@ -48,7 +48,7 @@ class ScheduleChecker:
         last_date = first_date + timedelta(days=2)
         appt_date = appt_start.date()
 
-        return appt_date >= first_date and appt_date <= last_date:
+        return appt_date >= first_date and appt_date <= last_date
 
     @classmethod
     def check_time(cls, appt_start, duration):

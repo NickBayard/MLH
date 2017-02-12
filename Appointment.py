@@ -1,46 +1,58 @@
-import sys
 import requests
 from datetime import datetime, timedelta
-from datetime import date as datedate
 from Parser import Parser
-from Utils import *
+
 
 class AppointmentError(Exception):
     pass
 
+
 class LoginError(AppointmentError):
     pass
+
 
 class DurationError(AppointmentError):
     pass
 
+
 class ChildTypeError(AppointmentError):
     pass
+
 
 class SelectDateError(AppointmentError):
     pass
 
+
 class UnableToBookAppointmentError(AppointmentError):
     pass
 
+
+class SelectTimeError(AppointmentError):
+    pass
+
+
+class FinalizeError(AppointmentError):
+    pass
+
+
 class Appointment:
     """The Appointment is the workhorse of this application.  It will
-    attempt to book a child sitting appointment  or appointments at 
+    attempt to book a child sitting appointment  or appointments at
     the specified time while providing feedback to the AppointmentHandler
     should there be any issues with making the booking."""
 
     url = 'https://booknow.appointment-plus.com/73kgtt5s/'
 
     post_data = {
-        'id' : '330',
-        'location_id' : '330',
-        'headquarters_id' : '330',
-        'd' : 'appointplus356',
-        'page' : '10',
-        'm' : '2',
-        'type' : '23',
-        'action' : 'log_in',
-        'e_id' : ''}
+        'id': '330',
+        'location_id': '330',
+        'headquarters_id': '330',
+        'd': 'appointplus356',
+        'page': '10',
+        'm': '2',
+        'type': '23',
+        'action': 'log_in',
+        'e_id': ''}
 
     durations = {
         30: '973',
@@ -61,6 +73,7 @@ class Appointment:
         for self.appt in self.appointments:
             self.set_duration()
             self.select_child_type()
+            self.collect_child_ids()
 
             if first_pass:
                 first_pass = False
@@ -69,11 +82,11 @@ class Appointment:
             if self.appt.dt in self.available_times:
                 self.select_date()
                 self.select_time()
-                self.finalize_appointment()
+                # self.finalize_appointment()
             else:
                 raise UnableToBookAppointmentError
 
-        #TODO verify that appointment link is present
+        # TODO verify that appointment link is present
 
     def update_store(self):
         return self.is_store_updated
@@ -90,9 +103,9 @@ class Appointment:
 
     def login(self):
         login_data = {
-            'login_screen' : 'yes',
+            'login_screen': 'yes',
             'loginname' : self.store.user_data.user,
-            'password' : self.store.user_data.password}
+            'password': self.store.user_data.password}
 
         login_data.update(self.post_data)
 
@@ -123,7 +136,7 @@ class Appointment:
             'staff_switch_loc': '',
             'day_name': 'any',
             'rep_id': '',
-            'service_id': durations[self.appt.duration],
+            'service_id': self.durations[self.appt.duration],
             'event': ''}
         try:
             self.post(self.session, duration_data, update=False)
@@ -132,19 +145,20 @@ class Appointment:
 
     def select_child_type(self):
         child_types = {
-            'child' : '782',
-            'infant' : '783'}
+            'child': '782',
+            'infant': '783'}
 
         # Grab the first child name from the appointment list and use that
         # as the key to the user_data.children dictionary to look up the type
         child_type = self.store.user_data.children[self.appt.children[0]].type
-        child_data = {'e_id' : child_types[child_type]}
+        child_data = {'e_id': child_types[child_type]}
 
         try:
             self.post(self.session, child_data)
         except:
             raise ChildTypeError
 
+    def collect_child_ids(self):
         self.child_ids = None
         for child in self.store.user_data.children:
             if not child.id:
@@ -158,18 +172,18 @@ class Appointment:
                     self.is_store_updated = True
 
     def collect_available_times(self):
-        available_dates = self.parser.get_available_dates(text)
+        available_dates = self.parser.get_available_dates(self.text)
 
         self.available_times = []
 
         for date in available_dates:
             self.select_date(date)
             formatted_times = self.parser.get_available_times(self.text)
-            self.available_times.extend([datetime(year=date.year, 
-                            month=date.month, 
-                            day=date.month, 
-                            hour=int(time/60), 
-                            minute=time%60) 
+            self.available_times.extend([datetime(year=date.year,
+                                                  month=date.month,
+                                                  day=date.month,
+                                                  hour=int(time / 60),
+                                                  minute=time % 60)
                     for time in formatted_times])
 
     def select_date(self, date):
@@ -194,32 +208,32 @@ class Appointment:
             'date_ymd': this_date} 
 
         for child in self.appt.children:
-            date_data[child.id] = 'on'
-        
+            date_data[self.child_ids[child]] = 'on'
+
         try:
             self.post(self.session, date_data)
         except:
             raise SelectDateError(date)
 
-    #TODO Do this thing
+    # TODO Do this thing
     def select_time(self):
-        try:
-            self.post(self.session, self.time_data, update=False)
-        except:
-            error('Unable to select time')
+        print(self.post_data)
+        #try:
+            #self.post(self.session, self.time_data, update=False)
+        #except:
+            #raise SelectTimeError
 
-        try:
-            self.final_data = self.parser.get_final_data(self.text)
-        except:
-            error('Unable to parse finalization data')
+        #try:
+            #self.final_data = self.parser.get_final_data(self.text)
+        #except:
+            #error('Unable to parse finalization data')
 
-    #TODO Do this thing
+    # TODO Do this thing
     def finalize_appointment(self):
         try:
             self.post(self.session, self.final_data, update=False)
         except:
-            error('Unable to finalize appointment')
+            raise FinalizeError
 
         with open('complete.html', 'w') as f:
             f.write(self.text)
-
