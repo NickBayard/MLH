@@ -1,7 +1,9 @@
-#from Persist import *
-from Appointment import Appointment
-from ScheduleChecker import ScheduleChecker, ScheduleError
 from copy import copy
+from Appointment import Appointment, LoginError, DurationError, ChildTypeError
+from Appointment import SelectDateError, SelectTimeError, FinalizeError
+from Appointment import UnableToBookAppiontmentError
+from ScheduleChecker import ScheduleChecker, ScheduleError
+from Parser import Parser, ParseCustomerIdError, ParseChildIdError, ParseAvailableDatesError
 
 class AppointmentHandler:
     """ AppointmentHandler takes an Appointment instance and runs it.

@@ -6,6 +6,7 @@ import argparse
 from datetime import datetime
 from version import __version__
 from Persist import Persist
+from PersistantData import Schedule
 from Appointment import Appointment
 from Utils import int_input, input_with_quit
 from AppointmentHandler import AppointmentHandler
@@ -41,14 +42,14 @@ def validate_datetime(args):
         # Combine args.data and args.time into a DateTime object
         dt = '{} {}'.format(args.date, args.time)
         try:
-            args.dt = datetime.strptime(dt, '%Y%m%D %H%M')
+            args.dt = datetime.strptime(dt, '%Y%m%d %H%M')
         except:
             print('Unable to parse data and time of appointment.')
             args.date = args.time = None
             continue
 
         # Check that the appointment time slot is valid
-        if ScheduleChecker.check_time(args.datetime, args.duration):
+        if ScheduleChecker.check_time(args.dt, args.duration):
             break
         else:
             print('The time {} on {} is not a valid appointment time.'.format(args.time, args.date))
@@ -122,8 +123,7 @@ def parse_args():
 
 
 def main(args):
-    pdb.set_trace()
-    persist = Persist('mlh.pick')
+    persist = Persist('db.pick')
 
     store = persist.get_data()
 
@@ -132,9 +132,9 @@ def main(args):
     if args.new_appt:  # We want to schedule a new appointment
         # If an appointment was specified with children and infants,
         # it needs to be split into separate appointments
-        for sched in split_appointments(store, args):
-            store.appointments.append(sched)
+        store.appointments.extend(split_appointments(store, args))
 
+        pdb.set_trace()
         persist.set_data()
 
     # book all available scheduled appointments

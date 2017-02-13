@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, time
+from datetime import datetime, date, timedelta, time
 from enum import Enum
 from collections import namedtuple
 
@@ -52,11 +52,11 @@ class ScheduleChecker:
 
     @classmethod
     def check_time(cls, appt_start, duration):
-        limit = cls.timeLimits[cls.Weekday(appt_start.date().weekday())]
+        limit = cls.timeLimits[cls.WeekDay(appt_start.date().weekday())]
 
         appt_end = appt_start + timedelta(minutes=duration)
 
-        return app_start >= limit.start and appt_end <= limit.stop
+        return appt_start.time() >= limit.start and appt_end.time() <= limit.stop
 
 
         
