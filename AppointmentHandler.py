@@ -1,9 +1,13 @@
 from copy import copy
-from Appointment import Appointment, LoginError, DurationError, ChildTypeError
+
+from Appointment import Appointment, AppointmentError
+from Appointment import LoginError, DurationError, ChildTypeError
 from Appointment import SelectDateError, SelectTimeError, FinalizeError
 from Appointment import UnableToBookAppiontmentError
 from ScheduleChecker import ScheduleChecker, ScheduleError
-from Parser import Parser, ParseCustomerIdError, ParseChildIdError, ParseAvailableDatesError
+from Parser import ParseError, ParseCustomerIdError
+from Parser import ParseChildIdError, ParseAvailableDatesError
+
 
 class AppointmentHandler:
     """ AppointmentHandler takes an Appointment instance and runs it.
@@ -16,10 +20,12 @@ class AppointmentHandler:
         self.appointments = self.store.appointments
 
     def handle_error(self, error):
-        pass
+        # FIXME
+        raise error
 
     def handle_result(self, result):
-        pass
+        # FIXME
+        print(result)
 
     def run(self):
         # Copy items in appointments that can possibly be booked
@@ -32,14 +38,14 @@ class AppointmentHandler:
                     schedule.append(appt)
             except ScheduleError:
                 # This appointment has passed.  Purge from the list
-                self.appointments.pop(i)
-                
+                self.appointments.pop(index)
+
         appt = Appointment(self.store, schedule)
 
-        for result, error in appt.book():
-            if error:
-                self.handle_error(error)
-            elif result:
+        for result in appt.book():
+            if issubclass(result, AppointmentError) or issubclass(result, ParseError):
+                self.handle_error(result)
+            else:
                 self.handle_result(result)
 
         if self.appt.update_store():

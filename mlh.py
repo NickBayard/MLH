@@ -4,6 +4,7 @@
 import pdb
 import argparse
 from datetime import datetime
+
 from version import __version__
 from Persist import Persist
 from PersistantData import Schedule
@@ -91,7 +92,7 @@ def split_appointments(store, args):
     appointments = []
 
     def get_appt_by_type(type):
-        names = [name for name, info in store.user_data.children.items() 
+        names = [name for name, info in store.user_data.children.items()
                  if info.type == type and name in args.children]
 
         if names:

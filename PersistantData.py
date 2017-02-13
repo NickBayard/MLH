@@ -20,11 +20,10 @@ class Schedule:
 
 
 class PersistantData:
-    """PersistantData contains the data structure containing information 
+    """PersistantData contains the data structure containing information
     about the user account, the children and the appointents that should
     be booked in the future.  This class gets pickled for persistance."""
 
     def __init__(self, user_data, appointments=[]):
-        self.user_data = user_data #UserData
-        self.appointments = appointments #list  of Schedule
-
+        self.user_data = user_data  # UserData
+        self.appointments = appointments  # list  of Schedule

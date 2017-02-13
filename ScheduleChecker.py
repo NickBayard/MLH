@@ -2,15 +2,17 @@ from datetime import datetime, date, timedelta, time
 from enum import Enum
 from collections import namedtuple
 
+
 class ScheduleError(Exception):
     pass
+
 
 class ScheduleChecker:
     """ This class maintains a list of times which can potentially be
     booked.  It takes a date as it's initialing parameter and can then
     validate additional dates to see if they can potentially be booked
     at this time."""
-    
+
     # Child sitting hours
     # Mon-Thurs 8am-8pm
     # Fri       8am-630pm
@@ -26,13 +28,13 @@ class ScheduleChecker:
 
     TimeLimit = namedtuple('TimeLimit', ['start', 'stop'])
 
-    timeLimits = { WeekDay.MON: TimeLimit(start=time(hour=8), stop=time(hour=20)),
-                   WeekDay.TUE: TimeLimit(start=time(hour=8), stop=time(hour=20)),
-                   WeekDay.WED: TimeLimit(start=time(hour=8), stop=time(hour=20)),
-                   WeekDay.THU: TimeLimit(start=time(hour=8), stop=time(hour=20)),
-                   WeekDay.FRI: TimeLimit(start=time(hour=8), stop=time(hour=18, minute=30)),
-                   WeekDay.SAT: TimeLimit(start=time(hour=8), stop=time(hour=13)),
-                   WeekDay.SUN: TimeLimit(start=time(hour=8), stop=time(hour=13))}
+    timeLimits = {WeekDay.MON: TimeLimit(start=time(hour=8), stop=time(hour=20)),
+                  WeekDay.TUE: TimeLimit(start=time(hour=8), stop=time(hour=20)),
+                  WeekDay.WED: TimeLimit(start=time(hour=8), stop=time(hour=20)),
+                  WeekDay.THU: TimeLimit(start=time(hour=8), stop=time(hour=20)),
+                  WeekDay.FRI: TimeLimit(start=time(hour=8), stop=time(hour=18, minute=30)),
+                  WeekDay.SAT: TimeLimit(start=time(hour=8), stop=time(hour=13)),
+                  WeekDay.SUN: TimeLimit(start=time(hour=8), stop=time(hour=13))}
 
     @staticmethod
     def check_date(appt_start):
@@ -41,7 +43,7 @@ class ScheduleChecker:
             # Should only be necessary to clean up appointments
             # that could not be successfully booked
             raise ScheduleError
-        
+
         # check if the appointment is valid for today, tomorrow or
         # the next day.
         first_date = date.today()
@@ -57,9 +59,3 @@ class ScheduleChecker:
         appt_end = appt_start + timedelta(minutes=duration)
 
         return appt_start.time() >= limit.start and appt_end.time() <= limit.stop
-
-
-        
-
-
-        

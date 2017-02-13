@@ -1,7 +1,5 @@
 import sys
 
-def error(message):
-    sys.exit('Error: {}'.format(message))
 
 def int_input(txt, min, max):
     while True:
@@ -15,10 +13,11 @@ def int_input(txt, min, max):
         if response > max or response < min:
             print('Response outside of acceptable range.')
             continue
-        else:   
+        else:  
             break
 
     return response
+
 
 def input_with_quit(txt):
     response = input(txt)
@@ -26,4 +25,3 @@ def input_with_quit(txt):
         sys.exit()
 
     return response
-

@@ -1,5 +1,6 @@
 import requests
 from datetime import datetime, timedelta
+
 from Parser import Parser, ParseCustomerIdError, ParseChildIdError, ParseAvailableDatesError
 
 
@@ -72,28 +73,27 @@ class Appointment:
         try:
             self.login()
         except LoginError:
-            return None, LoginError
+            return LoginError
         except ParseCustomerIdError:
-            yield None, ParseCustomerIdError
-            continue
-        
+            return ParseCustomerIdError
+
         for self.appt in self.appointments:
             try:
                 self.set_duration()
             except DurationError:
-                yield None, DurationError
+                yield DurationError
                 continue
 
             try:
                 self.select_child_type()
             except ChildTypeError:
-                yield None, ChildTypeError
+                yield ChildTypeError
                 continue
 
             try:
                 self.collect_child_ids()
             except ParseChildIdError:
-                yield None, ParseChildIdError
+                yield ParseChildIdError
                 continue
 
             if first_pass:
@@ -101,34 +101,34 @@ class Appointment:
                 try:
                     self.collect_available_times()
                 except ParseAvailableDatesError:
-                    yield None, ParseAvailableDatesError
+                    yield ParseAvailableDatesError
                 except SelectDateError:
-                    yield None, SelectDateError
+                    yield SelectDateError
 
             if self.appt.dt in self.available_times:
                 try:
                     self.select_date()
                 except SelectDateError:
-                    yield None, SelectDateError
+                    yield SelectDateError
                     continue
 
                 try:
                     self.select_time()
                 except SelectTimeError:
-                    yield None, SelectTimeError
+                    yield SelectTimeError
                     continue
 
                 try:
                     self.finalize_appointment()
                 except FinalizeError:
-                    yield None, FinalizeError
+                    yield FinalizeError
                     continue
             else:
-                yield None, UnableToBookAppointmentError
+                yield UnableToBookAppointmentError
 
             # TODO verify that appointment link is present
             # Successfully booked appointment
-            yield True, None
+            yield True
 
     def update_store(self):
         return self.is_store_updated
@@ -146,7 +146,7 @@ class Appointment:
     def login(self):
         login_data = {
             'login_screen': 'yes',
-            'loginname' : self.store.user_data.user,
+            'loginname': self.store.user_data.user,
             'password': self.store.user_data.password}
 
         login_data.update(self.post_data)
@@ -226,7 +226,7 @@ class Appointment:
                                                   day=date.month,
                                                   hour=int(time / 60),
                                                   minute=time % 60)
-                    for time in formatted_times])
+                                         for time in formatted_times])
 
     def select_date(self, date):
         prev_date = date - timedelta(days=1)
@@ -243,11 +243,11 @@ class Appointment:
             'new_child2_last_name': '',
             'previous_service_id': self.post_data['service_id'],
             'view_prev_month': '',
-            'view_next_month': '', 
+            'view_next_month': '',
             'next_date': next_date,
             'prev_date': prev_date,
             'starting_date': this_date,
-            'date_ymd': this_date} 
+            'date_ymd': this_date}
 
         for child in self.appt.children:
             date_data[self.child_ids[child]] = 'on'

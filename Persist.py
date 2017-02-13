@@ -25,7 +25,7 @@ class Persist:
 
     def _get_username(self):
         while True:
-            user = input_with_quit('Enter your email/username: ') 
+            user = input_with_quit('Enter your email/username: ')
             m = re.match("^[a-zA-Z0-9-.]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]{2,3}$", user)
             if not m:
                 print('Email is not valid.  Please try again.')
@@ -67,9 +67,9 @@ class Persist:
         print("This looks like the first time that you've used Mother's Little Helper.\n")
         print('Please fill out some information that will help me book your future appointments.\n')
 
-        self.store = PersistantData(UserData(user = self._get_username(), 
-                                             password = self._get_password(), 
-                                             children = self._get_children()))
+        self.store = PersistantData(UserData(user=self._get_username(),
+                                             password=self._get_password(),
+                                             children=self._get_children()))
 
     def get_data(self):
         return self.store
@@ -77,5 +77,3 @@ class Persist:
     def set_data(self):
         with self.file.open('wb') as f:
             pickle.dump(self.store, f)
-        
-        
