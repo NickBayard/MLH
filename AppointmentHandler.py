@@ -3,7 +3,7 @@ from copy import copy
 from Appointment import Appointment, AppointmentError
 from Appointment import LoginError, DurationError, ChildTypeError
 from Appointment import SelectDateError, SelectTimeError, FinalizeError
-from Appointment import UnableToBookAppiontmentError
+from Appointment import UnableToBookAppointmentError
 from ScheduleChecker import ScheduleChecker, ScheduleError
 from Parser import ParseError, ParseCustomerIdError
 from Parser import ParseChildIdError, ParseAvailableDatesError
@@ -48,6 +48,6 @@ class AppointmentHandler:
             else:
                 self.handle_result(result)
 
-        if self.appt.update_store():
+        if appt.update_store():
             self.persist.set_data()
             self.store = self.persist.get_data()

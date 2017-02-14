@@ -58,6 +58,8 @@ class Persist:
                     print("Sorry I don\'t understand your answer.")
                 else:
                     type = 'child' if type == 'c' else 'infant'
+                    if type == 'infant':
+                        name = '{}18'.format(name)
                     break
             children[name] = Child(type)
 

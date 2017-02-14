@@ -1,9 +1,9 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import pdb
 import argparse
 from datetime import datetime
+from copy import copy
 
 from version import __version__
 from Persist import Persist
@@ -24,12 +24,13 @@ def validate_children(children, persist):
         for child in range(count):
             while True:
                 name = input_with_quit('Please enter the name for child {}'.format(child + 1))
-                if name not in persist.user_data.children:
+                name18 = '{}18'.format(name)
+                if name18 not in persist.user_data.children:
                     print('{} not a valid child name'.format(name))
                 else:
                     break
 
-            children.append(name)
+            children.append(name18)
 
 
 def validate_datetime(args):
@@ -119,6 +120,8 @@ def parse_args():
                         help='''Specify the time to book.  HH is 00-23.''')
     parser.add_argument('-r', dest='duration', metavar='MINUTES', type=int,
                         default=90, help='''Specfiy the duration of the appointment.''')
+    parser.add_argument('-x', dest='clear', action='store_true', 
+                        help='Clear appointments that have yet to be booked.')
 
     return parser.parse_args()
 
@@ -128,14 +131,26 @@ def main(args):
 
     store = persist.get_data()
 
+    if args.clear:
+        store.appointments.clear() 
+        persist.set_data()
+        return
+
     args = validate_args(args, store)
 
     if args.new_appt:  # We want to schedule a new appointment
         # If an appointment was specified with children and infants,
         # it needs to be split into separate appointments
-        store.appointments.extend(split_appointments(store, args))
+        appts = split_appointments(store, args)
 
-        pdb.set_trace()
+        # Remove appointments that already exist in the store
+        for appt in store.appointments:
+            for new_appt in copy(appts):
+                if new_appt == appt:
+                    appts.remove(new_appt)
+            
+        store.appointments.extend(appts)
+
         persist.set_data()
 
     # book all available scheduled appointments

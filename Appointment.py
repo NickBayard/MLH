@@ -90,6 +90,9 @@ class Appointment:
                 yield ChildTypeError
                 continue
 
+            # FIXME selecting the child type does not
+            # return content with the child ids and checkboxes
+            # Likely that the session isn't being stored
             try:
                 self.collect_child_ids()
             except ParseChildIdError:
@@ -152,7 +155,7 @@ class Appointment:
         login_data.update(self.post_data)
 
         try:
-            self.post(self.session, login_data, update=False)
+            self.post(login_data, update=False)
         except:
             raise LoginError
 
@@ -181,7 +184,7 @@ class Appointment:
             'service_id': self.durations[self.appt.duration],
             'event': ''}
         try:
-            self.post(self.session, duration_data, update=False)
+            self.post(duration_data, update=False)
         except:
             raise DurationError
 
@@ -196,21 +199,21 @@ class Appointment:
         child_data = {'e_id': child_types[child_type]}
 
         try:
-            self.post(self.session, child_data)
+            self.post(child_data)
         except:
             raise ChildTypeError
 
     def collect_child_ids(self):
         self.child_ids = None
-        for child in self.store.user_data.children:
+        for name, child in self.store.user_data.children.items():
             if not child.id:
                 self.child_ids = self.parser.get_child_ids(self.text)
                 break
 
         if self.child_ids:
-            for child in self.store.user_data.children:
-                if child.name in self.child_ids:
-                    child.id = self.child_ids[child.name]
+            for name, child in self.store.user_data.children.items():
+                if name in self.child_ids:
+                    child.id = self.child_ids[name]
                     self.is_store_updated = True
 
     def collect_available_times(self):
@@ -253,7 +256,7 @@ class Appointment:
             date_data[self.child_ids[child]] = 'on'
 
         try:
-            self.post(self.session, date_data)
+            self.post(date_data)
         except:
             raise SelectDateError(date)
 
@@ -261,7 +264,7 @@ class Appointment:
     def select_time(self):
         print(self.post_data)
         #try:
-            #self.post(self.session, self.time_data, update=False)
+            #self.post(self.time_data, update=False)
         #except:
             #raise SelectTimeError
 
@@ -273,7 +276,7 @@ class Appointment:
     # TODO Do this thing
     def finalize_appointment(self):
         try:
-            self.post(self.session, self.final_data, update=False)
+            self.post(self.final_data, update=False)
         except:
             raise FinalizeError
 

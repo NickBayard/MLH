@@ -3,7 +3,8 @@ class UserData:
     def __init__(self, user, password, children={}):
         self.user = user
         self.password = password
-        self.children = children
+        # Dict of Child with child's name as the key
+        self.children = children  
 
 
 class Child:
@@ -17,6 +18,9 @@ class Schedule:
         self.datetime = datetime
         self.duration = duration
         self.children = children
+
+    def __eq__(self, other):
+        return self.datetime == other.datetime and self.children == other.children
 
 
 class PersistantData:
