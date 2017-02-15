@@ -1,3 +1,4 @@
+import pdb
 import requests
 from datetime import datetime, timedelta
 
@@ -44,17 +45,6 @@ class Appointment:
 
     url = 'https://booknow.appointment-plus.com/73kgtt5s/'
 
-    post_data = {
-        'id': '330',
-        'location_id': '330',
-        'headquarters_id': '330',
-        'd': 'appointplus356',
-        'page': '10',
-        'm': '2',
-        'type': '23',
-        'action': 'log_in',
-        'e_id': ''}
-
     durations = {
         30: '973',
         60: '974',
@@ -62,6 +52,17 @@ class Appointment:
 
     def __init__(self, store, appointments):
         self.session = requests.Session()
+        self.session.headers = {
+            'id': '330',
+            'location_id': '330',
+            'headquarters_id': '330',
+            'd': 'appointplus356',
+            'page': '10',
+            'm': '2',
+            'type': '23',
+            'action': 'log_in',
+            'e_id': ''}
+
         self.parser = Parser()
 
         self.store = store
@@ -78,6 +79,7 @@ class Appointment:
             return ParseCustomerIdError
 
         for self.appt in self.appointments:
+            pdb.set_trace()
             try:
                 self.set_duration()
             except DurationError:
@@ -138,9 +140,9 @@ class Appointment:
 
     def post(self, data, update=True):
         if update:
-            self.post_data.update(data)
+            self.session.headers.update(data)
 
-        r = self.session.post(self.url, data=self.post_data if update else data)
+        r = self.session.post(self.url, data=None if update else data)
 
         r.raise_for_status()
 
@@ -152,14 +154,12 @@ class Appointment:
             'loginname': self.store.user_data.user,
             'password': self.store.user_data.password}
 
-        login_data.update(self.post_data)
-
         try:
             self.post(login_data, update=False)
         except:
             raise LoginError
 
-        self.post_data['customer_id'] = self.parser.get_customer_id(self.text)
+        self.session.headers['customer_id'] = self.parser.get_customer_id(self.text)
 
     def set_duration(self):
         duration_data = {
@@ -184,7 +184,7 @@ class Appointment:
             'service_id': self.durations[self.appt.duration],
             'event': ''}
         try:
-            self.post(duration_data, update=False)
+            self.post(duration_data)
         except:
             raise DurationError
 
@@ -244,7 +244,7 @@ class Appointment:
             'new_child1_last_name': '',
             'new_child2_first_name': '',
             'new_child2_last_name': '',
-            'previous_service_id': self.post_data['service_id'],
+            'previous_service_id': self.session.headers['service_id'],
             'view_prev_month': '',
             'view_next_month': '',
             'next_date': next_date,
@@ -262,7 +262,7 @@ class Appointment:
 
     # TODO Do this thing
     def select_time(self):
-        print(self.post_data)
+        print(self.session.headers)
         #try:
             #self.post(self.time_data, update=False)
         #except:
