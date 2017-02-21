@@ -52,7 +52,7 @@ class Appointment:
 
     def __init__(self, store, appointments):
         self.session = requests.Session()
-        self.session.headers = {
+        self.post_data = {
             'id': '330',
             'location_id': '330',
             'headquarters_id': '330',
@@ -79,7 +79,6 @@ class Appointment:
             return ParseCustomerIdError
 
         for self.appt in self.appointments:
-            pdb.set_trace()
             try:
                 self.set_duration()
             except DurationError:
@@ -110,7 +109,7 @@ class Appointment:
                 except SelectDateError:
                     yield SelectDateError
 
-            if self.appt.dt in self.available_times:
+            if self.appt.datetime in self.available_times:
                 try:
                     self.select_date()
                 except SelectDateError:
@@ -140,28 +139,34 @@ class Appointment:
 
     def post(self, data, update=True):
         if update:
-            self.session.headers.update(data)
+            self.post_data.update(data)
 
-        r = self.session.post(self.url, data=None if update else data)
+        r = self.session.post(self.url, params=self.post_data if update else data)
 
         r.raise_for_status()
+
+        print(r.url)
 
         self.text = r.text
 
     def login(self):
+        print("login")
         login_data = {
             'login_screen': 'yes',
             'loginname': self.store.user_data.user,
             'password': self.store.user_data.password}
+
+        login_data.update(self.post_data)
 
         try:
             self.post(login_data, update=False)
         except:
             raise LoginError
 
-        self.session.headers['customer_id'] = self.parser.get_customer_id(self.text)
+        self.post_data['customer_id'] = self.parser.get_customer_id(self.text)
 
     def set_duration(self):
+        print("set duration")
         duration_data = {
             'selection_form': 'yes',
             'wt_c_id': '',
@@ -189,6 +194,7 @@ class Appointment:
             raise DurationError
 
     def select_child_type(self):
+        print("select_child_type")
         child_types = {
             'child': '782',
             'infant': '783'}
@@ -232,6 +238,7 @@ class Appointment:
                                          for time in formatted_times])
 
     def select_date(self, date):
+        print("select date")
         prev_date = date - timedelta(days=1)
         prev_date = prev_date.strftime('%Y%m%d')
         next_date = date + timedelta(days=1)
@@ -244,7 +251,7 @@ class Appointment:
             'new_child1_last_name': '',
             'new_child2_first_name': '',
             'new_child2_last_name': '',
-            'previous_service_id': self.session.headers['service_id'],
+            'previous_service_id': self.post_data['service_id'],
             'view_prev_month': '',
             'view_next_month': '',
             'next_date': next_date,
@@ -262,7 +269,7 @@ class Appointment:
 
     # TODO Do this thing
     def select_time(self):
-        print(self.session.headers)
+        print("select time")
         #try:
             #self.post(self.time_data, update=False)
         #except:
