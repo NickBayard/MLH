@@ -146,6 +146,7 @@ class Appointment:
         r.raise_for_status()
 
         print(r.url)
+        print("data : {}".format(self.post_data if update else data))
 
         self.text = r.text
 
@@ -239,10 +240,18 @@ class Appointment:
 
     def select_date(self, date):
         print("select date")
-        prev_date = date - timedelta(days=1)
-        prev_date = prev_date.strftime('%Y%m%d')
-        next_date = date + timedelta(days=1)
-        next_date = next_date.strftime('%Y%m%d')
+        # Need first day of previous month)
+        temp_date = datetime(year=date.year -1 if date.month == 1 else date.year, 
+                             month=12 if date.month == 1 else date.month - 1, 
+                             day=1)
+        prev_date = temp_date.strftime('%Y%m%d')
+
+        # Need first day of next month
+        temp_date = datetime(year=date.year + 1 if date.month == 12 else date.year, 
+                             month=1 if date.month == 12 else date.month + 1,
+                             day=1)
+        next_date = temp_date.strftime('%Y%m%d')
+
         this_date = date.strftime('%Y%m%d')
 
         date_data = {
