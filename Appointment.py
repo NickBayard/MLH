@@ -109,6 +109,10 @@ class Appointment:
                 except SelectDateError:
                     yield SelectDateError
 
+            print("available times")
+            print(self.available_times)
+            print("appt {}".self.appt.datetime)
+
             if self.appt.datetime in self.available_times:
                 try:
                     self.select_date()
@@ -123,7 +127,8 @@ class Appointment:
                     continue
 
                 try:
-                    self.finalize_appointment()
+                    pass
+                    #self.finalize_appointment()
                 except FinalizeError:
                     yield FinalizeError
                     continue
@@ -223,13 +228,19 @@ class Appointment:
                     self.is_store_updated = True
 
     def collect_available_times(self):
+        print("collect available times")
         available_dates = self.parser.get_available_dates(self.text)
 
+        print("available dates {}".format(available_dates))
         self.available_times = []
 
         for date in available_dates:
             self.select_date(date)
+            with open('times.html','w') as f:
+                print(self.text, file=f)
+            pdb.set_trace()
             formatted_times = self.parser.get_available_times(self.text)
+            print("date {} formatted times {}".format(date, formatted_times))
             self.available_times.extend([datetime(year=date.year,
                                                   month=date.month,
                                                   day=date.month,
@@ -270,6 +281,7 @@ class Appointment:
     # TODO Do this thing
     def select_time(self):
         print("select time")
+        print("post data : {}".format(self.post_data))
         #try:
             #self.post(self.time_data, update=False)
         #except:
