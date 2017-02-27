@@ -1,6 +1,8 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import pdb
+import logging
 import argparse
 from datetime import datetime
 from copy import copy
@@ -122,11 +124,17 @@ def parse_args():
                         default=90, help='''Specfiy the duration of the appointment.''')
     parser.add_argument('-x', dest='clear', action='store_true', 
                         help='Clear appointments that have yet to be booked.')
+    parser.add_argument('-l', dest='log_level', choices=['debug', 'info'], default='info',
+                        help='log level')
 
     return parser.parse_args()
 
 
 def main(args):
+    log_level = getattr(logging, args.log_level.upper(), None)
+    logging.basicConfig(filename='log.log', level=log_level if log_level else logging.INFO)
+
+    logging.info('test log')
     persist = Persist('db.pick')
 
     store = persist.get_data()

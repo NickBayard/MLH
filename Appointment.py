@@ -1,4 +1,6 @@
+import sys
 import pdb
+import logging
 import requests
 from datetime import datetime, timedelta
 
@@ -109,9 +111,9 @@ class Appointment:
                 except SelectDateError:
                     yield SelectDateError
 
-            print("available times")
-            print(self.available_times)
-            print("appt {}".self.appt.datetime)
+            logging.debug("available times")
+            logging.debug(self.available_times)
+            logging.debug("appt {}".format(self.appt.datetime))
 
             if self.appt.datetime in self.available_times:
                 try:
@@ -150,13 +152,12 @@ class Appointment:
 
         r.raise_for_status()
 
-        print(r.url)
-        print("data : {}".format(self.post_data if update else data))
+        logging.debug("data : {}".format(self.post_data if update else data))
 
         self.text = r.text
 
     def login(self):
-        print("login")
+        logging.debug("login")
         login_data = {
             'login_screen': 'yes',
             'loginname': self.store.user_data.user,
@@ -172,7 +173,7 @@ class Appointment:
         self.post_data['customer_id'] = self.parser.get_customer_id(self.text)
 
     def set_duration(self):
-        print("set duration")
+        logging.debug("set duration")
         duration_data = {
             'selection_form': 'yes',
             'wt_c_id': '',
@@ -200,7 +201,7 @@ class Appointment:
             raise DurationError
 
     def select_child_type(self):
-        print("select_child_type")
+        logging.debug("select_child_type")
         child_types = {
             'child': '782',
             'infant': '783'}
@@ -229,19 +230,20 @@ class Appointment:
                     self.is_store_updated = True
 
     def collect_available_times(self):
-        print("collect available times")
+        logging.debug("collect available times")
         available_dates = self.parser.get_available_dates(self.text)
 
-        print("available dates {}".format(available_dates))
+        logging.debug("available dates {}".format(available_dates))
         self.available_times = []
 
         for date in available_dates:
             self.select_date(date)
-            with open('times.html','w') as f:
-                print(self.text, file=f)
-            pdb.set_trace()
+            #with open('date.html', 'w') as f:
+                #print(self.text, file=f)
+            #sys.exit()
+
             formatted_times = self.parser.get_available_times(self.text)
-            print("date {} formatted times {}".format(date, formatted_times))
+            logging.debug("date {} formatted times {}".format(date, formatted_times))
             self.available_times.extend([datetime(year=date.year,
                                                   month=date.month,
                                                   day=date.month,
@@ -250,7 +252,7 @@ class Appointment:
                                          for time in formatted_times])
 
     def select_date(self, date):
-        print("select date")
+        logging.debug("select date {}".format(date))
         # Need first day of previous month)
         temp_date = datetime(year=date.year -1 if date.month == 1 else date.year, 
                              month=12 if date.month == 1 else date.month - 1, 
@@ -289,8 +291,8 @@ class Appointment:
 
     # TODO Do this thing
     def select_time(self):
-        print("select time")
-        print("post data : {}".format(self.post_data))
+        logging.debug("select time")
+        logging.debug("post data : {}".format(self.post_data))
         #try:
             #self.post(self.time_data, update=False)
         #except:

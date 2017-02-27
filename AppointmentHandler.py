@@ -1,3 +1,4 @@
+import logging
 from copy import copy
 
 from Appointment import Appointment, AppointmentError
@@ -25,7 +26,7 @@ class AppointmentHandler:
 
     def handle_result(self, result):
         # FIXME
-        print(result)
+        logging.debug(result)
 
     def run(self):
         # Copy items in appointments that can possibly be booked
