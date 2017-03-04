@@ -56,6 +56,7 @@ class Appointment:
     def __init__(self, store, appointments):
         self.session = requests.Session()
         self.session.headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36'
+        self.session.headers['Connection'] = 'keep-alive'
         self.post_data = {
             'id': '330',
             'location_id': '330',
@@ -158,7 +159,7 @@ class Appointment:
         self.text = r.text
 
     def login(self):
-        logging.info("login")
+        logging.info("enter")
         login_data = {
             'login_screen': 'yes',
             'loginname': self.store.user_data.user,
@@ -178,7 +179,7 @@ class Appointment:
         r.raise_for_status()
 
     def set_duration(self):
-        logging.info("set duration")
+        logging.info("enter")
         duration_data = {
             'selection_form': 'yes',
             'wt_c_id': '',
@@ -206,7 +207,7 @@ class Appointment:
             raise DurationError
 
     def select_child_type(self):
-        logging.info("select_child_type")
+        logging.info("enter")
         child_types = {
             'child': '782',
             'infant': '783'}
@@ -235,7 +236,7 @@ class Appointment:
                     self.is_store_updated = True
 
     def collect_available_times(self):
-        logging.info("collect available times")
+        logging.info("enter")
         available_dates = self.parser.get_available_dates(self.text)
 
         logging.debug("available dates {}".format(available_dates))
@@ -257,7 +258,7 @@ class Appointment:
                                          for time in formatted_times])
 
     def select_date(self, date):
-        logging.info("select date {}".format(date))
+        logging.info("{}".format(date))
         # Need first day of previous month)
         last_month = datetime(year=date.year -1 if date.month == 1 else date.year, 
                              month=12 if date.month == 1 else date.month - 1, 
@@ -276,6 +277,8 @@ class Appointment:
         next_next_month = datetime(year=date.year + 1 if date.month >= 11 else date.year, 
                                    month=month - 12 if date.month >= 11 else month,
                                    day=1).strftime('%Y%m%d')
+
+        this_date = date.strftime('%Y%m%d')
 
         date_data = {
             'action': 'viewappts',
@@ -301,7 +304,7 @@ class Appointment:
 
     # TODO Do this thing
     def select_time(self):
-        logging.info("select time")
+        logging.info("enter")
         logging.debug("post data : {}".format(self.post_data))
         #try:
             #self.post(self.time_data, update=False)

@@ -133,7 +133,7 @@ def parse_args():
 def main(args):
     log_level = getattr(logging, args.log_level.upper(), None)
     logging.basicConfig(filename='log.log', level=log_level if log_level else logging.INFO,
-                        format='%(asctime)s[%(levelname)s]<%(name)s>:%(funcName)s->%(message)s')
+                        format='%(asctime)s[%(levelname)s]<%(name)s>|%(funcName)s:%(message)s')
 
     persist = Persist('db.pick')
 
