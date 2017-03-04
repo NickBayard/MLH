@@ -134,7 +134,6 @@ def main(args):
     log_level = getattr(logging, args.log_level.upper(), None)
     logging.basicConfig(filename='log.log', level=log_level if log_level else logging.INFO)
 
-    logging.info('test log')
     persist = Persist('db.pick')
 
     store = persist.get_data()

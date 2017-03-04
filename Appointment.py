@@ -93,9 +93,6 @@ class Appointment:
                 yield ChildTypeError
                 continue
 
-            # FIXME selecting the child type does not
-            # return content with the child ids and checkboxes
-            # Likely that the session isn't being stored
             try:
                 self.collect_child_ids()
             except ParseChildIdError:
@@ -254,18 +251,23 @@ class Appointment:
     def select_date(self, date):
         logging.debug("select date {}".format(date))
         # Need first day of previous month)
-        temp_date = datetime(year=date.year -1 if date.month == 1 else date.year, 
+        last_month = datetime(year=date.year -1 if date.month == 1 else date.year, 
                              month=12 if date.month == 1 else date.month - 1, 
-                             day=1)
-        prev_date = temp_date.strftime('%Y%m%d')
+                             day=1).strftime('%Y%m%d')
+
+        this_month = datetime(year=date.year,
+                              month=date.month,
+                              day=1).strftime('%Y%m%d')
 
         # Need first day of next month
-        temp_date = datetime(year=date.year + 1 if date.month == 12 else date.year, 
+        next_month = datetime(year=date.year + 1 if date.month == 12 else date.year, 
                              month=1 if date.month == 12 else date.month + 1,
-                             day=1)
-        next_date = temp_date.strftime('%Y%m%d')
+                             day=1).strftime('%Y%m%d')
 
-        this_date = date.strftime('%Y%m%d')
+        month = date.month + 2
+        next_next_month = datetime(year=date.year + 1 if date.month >= 11 else date.year, 
+                                   month=month - 12 if date.month >= 11 else month,
+                                   day=1).strftime('%Y%m%d')
 
         date_data = {
             'action': 'viewappts',
@@ -276,8 +278,8 @@ class Appointment:
             'previous_service_id': self.post_data['service_id'],
             'view_prev_month': '',
             'view_next_month': '',
-            'next_date': next_date,
-            'prev_date': prev_date,
+            'next_date': [next_month, next_next_month, next_next_month],
+            'prev_date': [last_month, this_month, this_month],
             'starting_date': this_date,
             'date_ymd': this_date}
 
