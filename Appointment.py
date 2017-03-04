@@ -2,6 +2,7 @@ import sys
 import pdb
 import logging
 import requests
+from time import sleep
 from datetime import datetime, timedelta
 
 from Parser import Parser, ParseCustomerIdError, ParseChildIdError, ParseAvailableDatesError
@@ -54,6 +55,7 @@ class Appointment:
 
     def __init__(self, store, appointments):
         self.session = requests.Session()
+        self.session.headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36'
         self.post_data = {
             'id': '330',
             'location_id': '330',
@@ -141,9 +143,11 @@ class Appointment:
     def update_store(self):
         return self.is_store_updated
 
-    def post(self, data, update=True):
+    def post(self, data, update=True, delay=1):
         if update:
             self.post_data.update(data)
+
+        sleep(delay)  # Sleeping before each post to avoid server dropping connection
 
         r = self.session.post(self.url, params=self.post_data if update else data)
 
@@ -154,7 +158,7 @@ class Appointment:
         self.text = r.text
 
     def login(self):
-        logging.debug("login")
+        logging.info("login")
         login_data = {
             'login_screen': 'yes',
             'loginname': self.store.user_data.user,
@@ -169,8 +173,12 @@ class Appointment:
 
         self.post_data['customer_id'] = self.parser.get_customer_id(self.text)
 
+    def logout(self):
+        r = self.session.get(self.url + 'logout')
+        r.raise_for_status()
+
     def set_duration(self):
-        logging.debug("set duration")
+        logging.info("set duration")
         duration_data = {
             'selection_form': 'yes',
             'wt_c_id': '',
@@ -198,7 +206,7 @@ class Appointment:
             raise DurationError
 
     def select_child_type(self):
-        logging.debug("select_child_type")
+        logging.info("select_child_type")
         child_types = {
             'child': '782',
             'infant': '783'}
@@ -227,7 +235,7 @@ class Appointment:
                     self.is_store_updated = True
 
     def collect_available_times(self):
-        logging.debug("collect available times")
+        logging.info("collect available times")
         available_dates = self.parser.get_available_dates(self.text)
 
         logging.debug("available dates {}".format(available_dates))
@@ -249,7 +257,7 @@ class Appointment:
                                          for time in formatted_times])
 
     def select_date(self, date):
-        logging.debug("select date {}".format(date))
+        logging.info("select date {}".format(date))
         # Need first day of previous month)
         last_month = datetime(year=date.year -1 if date.month == 1 else date.year, 
                              month=12 if date.month == 1 else date.month - 1, 
@@ -293,7 +301,7 @@ class Appointment:
 
     # TODO Do this thing
     def select_time(self):
-        logging.debug("select time")
+        logging.info("select time")
         logging.debug("post data : {}".format(self.post_data))
         #try:
             #self.post(self.time_data, update=False)
