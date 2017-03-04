@@ -21,7 +21,7 @@ class AppointmentHandler:
         self.appointments = self.store.appointments
 
     def handle_error(self, error):
-        # FIXME
+        self.appt.logout()
         raise error
 
     def handle_result(self, result):
@@ -41,14 +41,14 @@ class AppointmentHandler:
                 # This appointment has passed.  Purge from the list
                 self.appointments.pop(index)
 
-        appt = Appointment(self.store, schedule)
+        self.appt = Appointment(self.store, schedule)
 
-        for result in appt.book():
+        for result in self.appt.book():
             if issubclass(result, AppointmentError) or issubclass(result, ParseError):
                 self.handle_error(result)
             else:
                 self.handle_result(result)
 
-        if appt.update_store():
+        if self.appt.update_store():
             self.persist.set_data()
             self.store = self.persist.get_data()
