@@ -142,7 +142,6 @@ def main(args):
     if args.clear:
         store.appointments.clear() 
         persist.set_data()
-        return
 
     args = validate_args(args, store)
 

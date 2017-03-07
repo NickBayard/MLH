@@ -1,12 +1,10 @@
-import sys
-import pdb
 import logging
-import requests
 from time import sleep
 from datetime import datetime, timedelta
 
-from Parser import Parser, ParseCustomerIdError, ParseChildIdError, ParseAvailableDatesError
+from splinter import Browser
 
+from Parser import Parser, ParseChildIdError, ParseAvailableDatesError
 
 class AppointmentError(Exception):
     pass
@@ -40,6 +38,8 @@ class FinalizeError(AppointmentError):
     pass
 
 
+logging.getLogger('selenium').setLevel(logging.WARNING)
+
 class Appointment:
     """The Appointment is the workhorse of this application.  It will
     attempt to book a child sitting appointment  or appointments at
@@ -54,28 +54,19 @@ class Appointment:
         90: '975'}
 
     def __init__(self, store, appointments):
-        self.session = requests.Session()
-        self.session.headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36'
-        self.session.headers['Connection'] = 'keep-alive'
-        self.post_data = {
-            'id': '330',
-            'location_id': '330',
-            'headquarters_id': '330',
-            'd': 'appointplus356',
-            'page': '10',
-            'm': '2',
-            'type': '23',
-            'action': 'log_in',
-            'e_id': ''}
-
-        self.parser = Parser()
+        self.browser = Browser()
 
         self.store = store
         self.is_store_updated = False
         self.appointments = appointments
 
+        self.parser = Parser()
+
     def book(self):
         first_pass = True
+
+        self.browser.visit(self.url)
+
         try:
             self.login()
         except LoginError:
@@ -117,7 +108,7 @@ class Appointment:
 
             if self.appt.datetime in self.available_times:
                 try:
-                    self.select_date()
+                    self.select_date(self.appt.datetime)
                 except SelectDateError:
                     yield SelectDateError
                     continue
@@ -139,70 +130,31 @@ class Appointment:
 
             # TODO verify that appointment link is present
             # Successfully booked appointment
+            self.close()
             yield True
 
     def update_store(self):
         return self.is_store_updated
 
-    def post(self, data, update=True, delay=1):
-        if update:
-            self.post_data.update(data)
-
-        sleep(delay)  # Sleeping before each post to avoid server dropping connection
-
-        r = self.session.post(self.url, params=self.post_data if update else data)
-
-        r.raise_for_status()
-
-        logging.debug("data : {}".format(self.post_data if update else data))
-
-        self.text = r.text
-
     def login(self):
         logging.info("enter")
-        login_data = {
-            'login_screen': 'yes',
-            'loginname': self.store.user_data.user,
-            'password': self.store.user_data.password}
-
-        login_data.update(self.post_data)
 
         try:
-            self.post(login_data, update=False)
+            self.browser.fill('loginname', self.store.user_data.user)
+            self.browser.fill('password', self.store.user_data.password)
+            self.browser.find_by_value('Log In').click()
         except:
             raise LoginError
 
-        self.post_data['customer_id'] = self.parser.get_customer_id(self.text)
-
-    def logout(self):
-        r = self.session.get(self.url + 'logout')
-        r.raise_for_status()
+    def close(self):
+        self.browser.click_link_by_partial_href('logout')
+        sleep(1)
+        self.browser.quit()
 
     def set_duration(self):
         logging.info("enter")
-        duration_data = {
-            'selection_form': 'yes',
-            'wt_c_id': '',
-            'wt_d': '',
-            'auth': 'yes',
-            'action2': '',
-            'show_services': '',
-            'temp_addon_id': '',
-            'customer_location_id': '330',
-            'vo': '',
-            'selected_pets': '',
-            'pet_count': '',
-            'pet_list': '',
-            'selected_children': '',
-            'child_count': '',
-            'children_list': '',
-            'staff_switch_loc': '',
-            'day_name': 'any',
-            'rep_id': '',
-            'service_id': self.durations[self.appt.duration],
-            'event': ''}
         try:
-            self.post(duration_data)
+            self.browser.find_by_name('service_id').select(self.durations[self.appt.duration])
         except:
             raise DurationError
 
@@ -212,24 +164,28 @@ class Appointment:
             'child': '782',
             'infant': '783'}
 
-        # Grab the first child name from the appointment list and use that
-        # as the key to the user_data.children dictionary to look up the type
-        child_type = self.store.user_data.children[self.appt.children[0]].type
-        child_data = {'e_id': child_types[child_type]}
-
         try:
-            self.post(child_data)
+            # Grab the first child name from the appointment list and use that
+            # as the key to the user_data.children dictionary to look up the type
+            child_type = self.store.user_data.children[self.appt.children[0]].type
+            self.browser.find_by_name('e_id').select(child_types[child_type])
+            sleep(5)  # We need to give the page time to build
         except:
             raise ChildTypeError
 
     def collect_child_ids(self):
+        logging.info('enter')
         self.child_ids = None
         for name, child in self.store.user_data.children.items():
             if not child.id:
-                self.child_ids = self.parser.get_child_ids(self.text)
+                self.child_ids = self.parser.get_child_ids(self.browser.html)
                 break
 
         if self.child_ids:
+            logging.debug('child_ids : {}'.format(self.child_ids))
+            logging.debug('persitant child_ids : {}'.format(
+                          self.store.user_data.children.items()))
+
             for name, child in self.store.user_data.children.items():
                 if name in self.child_ids:
                     child.id = self.child_ids[name]
@@ -237,91 +193,47 @@ class Appointment:
 
     def collect_available_times(self):
         logging.info("enter")
-        available_dates = self.parser.get_available_dates(self.text)
+        available_dates = self.parser.get_available_dates(self.browser.html)
 
         logging.debug("available dates {}".format(available_dates))
         self.available_times = []
 
         for date in available_dates:
             self.select_date(date)
-            #with open('date.html', 'w') as f:
-                #print(self.text, file=f)
-            #sys.exit()
+            sleep(6)
 
-            formatted_times = self.parser.get_available_times(self.text)
+            formatted_times = self.parser.get_available_times(self.browser.html)
             logging.debug("date {} formatted times {}".format(date, formatted_times))
             self.available_times.extend([datetime(year=date.year,
                                                   month=date.month,
-                                                  day=date.month,
-                                                  hour=int(time / 60),
-                                                  minute=time % 60)
+                                                  day=date.day,
+                                                  hour=int(int(time) / 60),
+                                                  minute=int(time) % 60)
                                          for time in formatted_times])
 
     def select_date(self, date):
         logging.info("{}".format(date))
-        # Need first day of previous month)
-        last_month = datetime(year=date.year -1 if date.month == 1 else date.year, 
-                             month=12 if date.month == 1 else date.month - 1, 
-                             day=1).strftime('%Y%m%d')
-
-        this_month = datetime(year=date.year,
-                              month=date.month,
-                              day=1).strftime('%Y%m%d')
-
-        # Need first day of next month
-        next_month = datetime(year=date.year + 1 if date.month == 12 else date.year, 
-                             month=1 if date.month == 12 else date.month + 1,
-                             day=1).strftime('%Y%m%d')
-
-        month = date.month + 2
-        next_next_month = datetime(year=date.year + 1 if date.month >= 11 else date.year, 
-                                   month=month - 12 if date.month >= 11 else month,
-                                   day=1).strftime('%Y%m%d')
-
-        this_date = date.strftime('%Y%m%d')
-
-        date_data = {
-            'action': 'viewappts',
-            'new_child1_first_name': '',
-            'new_child1_last_name': '',
-            'new_child2_first_name': '',
-            'new_child2_last_name': '',
-            'previous_service_id': self.post_data['service_id'],
-            'view_prev_month': '',
-            'view_next_month': '',
-            'next_date': [next_month, next_next_month, next_next_month],
-            'prev_date': [last_month, this_month, this_month],
-            'starting_date': this_date,
-            'date_ymd': this_date}
 
         for child in self.appt.children:
-            date_data[self.child_ids[child]] = 'on'
+            self.browser.check(self.child_ids[child])
 
         try:
-            self.post(date_data)
+            self.browser.click_link_by_text(date.day)
         except:
             raise SelectDateError(date)
 
     # TODO Do this thing
     def select_time(self):
         logging.info("enter")
-        logging.debug("post data : {}".format(self.post_data))
-        #try:
-            #self.post(self.time_data, update=False)
-        #except:
-            #raise SelectTimeError
-
-        #try:
-            #self.final_data = self.parser.get_final_data(self.text)
-        #except:
-            #error('Unable to parse finalization data')
+        try:
+            # TODO The time needs to be selected with xpath
+            pass
+        except:
+            raise SelectTimeError
 
     # TODO Do this thing
     def finalize_appointment(self):
         try:
-            self.post(self.final_data, update=False)
+            pass
         except:
             raise FinalizeError
-
-        with open('complete.html', 'w') as f:
-            f.write(self.text)

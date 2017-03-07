@@ -21,12 +21,13 @@ class AppointmentHandler:
         self.appointments = self.store.appointments
 
     def handle_error(self, error):
-        self.appt.logout()
+        self.appt.close()
+        logging.debug('Failed due to {}'.format(error))
         raise error
 
     def handle_result(self, result):
         # FIXME
-        logging.debug(result)
+        logging.debug('Success {}'.format(result))
 
     def run(self):
         # Copy items in appointments that can possibly be booked
@@ -44,7 +45,7 @@ class AppointmentHandler:
         self.appt = Appointment(self.store, schedule)
 
         for result in self.appt.book():
-            if issubclass(result, AppointmentError) or issubclass(result, ParseError):
+            if issubclass(type(result), AppointmentError) or issubclass(type(result), ParseError):
                 self.handle_error(result)
             else:
                 self.handle_result(result)

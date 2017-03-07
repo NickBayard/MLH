@@ -1,3 +1,4 @@
+import pdb
 import re
 import bs4
 from datetime import datetime
@@ -74,8 +75,7 @@ class Parser:
 
         times = soup.find_all('form', {'name': 'gridSubmitForm'})
 
-        formatted_times = [time.find('input', {'name': 'appt_start_time'})['value'] for
-                           time in times]
+        formatted_times = [time.find('input', {'name': 'appt_start_time'})['value'] for time in times]
 
         return formatted_times
 
