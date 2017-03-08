@@ -1,3 +1,4 @@
+import pdb
 import logging
 from time import sleep
 from datetime import datetime, timedelta
@@ -35,6 +36,10 @@ class UnableToBookAppointmentError(AppointmentError):
 
 
 class FinalizeError(AppointmentError):
+    pass
+
+
+class VerifyError(AppointmentError):
     pass
 
 
@@ -121,14 +126,19 @@ class Appointment:
 
                 try:
                     pass
-                    #self.finalize_appointment()
+                    self.finalize_appointment()
                 except FinalizeError:
                     yield FinalizeError
                     continue
             else:
                 yield UnableToBookAppointmentError
 
-            # TODO verify that appointment link is present
+            try:
+                self.verify_appointment()
+            except VerifyError:
+                yield VerifyError
+                continue
+
             # Successfully booked appointment
             self.close()
             yield True
@@ -222,18 +232,27 @@ class Appointment:
         except:
             raise SelectDateError(date)
 
-    # TODO Do this thing
     def select_time(self):
         logging.info("enter")
         try:
-            # TODO The time needs to be selected with xpath
-            pass
+            time_string = self.appt.datetime.strftime('%I:%M') + \
+                          self.appt.datetime.strftime('%p').lower()
+            xpath = "//tr[td='{}']/td/font/form[@name='gridSubmitForm']/a".format(time_string)
+            self.browser.find_by_xpath(xpath).click()
         except:
             raise SelectTimeError
 
-    # TODO Do this thing
     def finalize_appointment(self):
         try:
-            pass
+            sleep(2)
+            self.browser.find_by_name('finalize_appt').click() 
         except:
             raise FinalizeError
+
+    def verify_appointment(self):
+        link_text = self.appt.datetime.strftime('%A, %B ') + \
+                    self.appt.datetime.strftime('%d').lstrip('0') + \
+                    self.appt.datetime.strftime(', %Y at %I:%M') + \
+                    self.appt.datetime.strftime('%p').lower()
+        if not self.browser.find_link_by_partial_text(link_text):
+            raise VerifyError

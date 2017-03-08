@@ -21,8 +21,8 @@ class AppointmentHandler:
         self.appointments = self.store.appointments
 
     def handle_error(self, error):
-        self.appt.close()
         logging.debug('Failed due to {}'.format(error))
+        self.appt.close()
         raise error
 
     def handle_result(self, result):
@@ -49,6 +49,8 @@ class AppointmentHandler:
                 self.handle_error(result)
             else:
                 self.handle_result(result)
+
+        self.appt.close()
 
         if self.appt.update_store():
             self.persist.set_data()
