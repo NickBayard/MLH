@@ -1,14 +1,9 @@
-import pdb
 import re
 import bs4
 from datetime import datetime
 
 
 class ParseError(Exception):
-    pass
-
-
-class ParseCustomerIdError(ParseError):
     pass
 
 
@@ -23,17 +18,6 @@ class ParseAvailableDatesError(ParseError):
 class Parser:
     """Parser is essentially the web page scraper that returns various
     bits of information on a particular page."""
-
-    @staticmethod
-    def get_customer_id(text):
-        soup = bs4.BeautifulSoup(text, 'lxml')
-
-        inputs = soup.find_all('input', {'name': 'customer_id'})
-        if inputs:
-            customer_id = inputs[0]['value']
-            return customer_id
-        else:
-            raise ParseCustomerIdError
 
     @staticmethod
     def get_child_ids(text):
@@ -78,18 +62,3 @@ class Parser:
         formatted_times = [time.find('input', {'name': 'appt_start_time'})['value'] for time in times]
 
         return formatted_times
-
-    @staticmethod
-    def get_final_data(text):
-        soup = bs4.BeautifulSoup(text, 'lxml')
-
-        form = soup.find('form', {'name': 'myForm2'})
-        inputs = form.find_all('input')
-
-        final_data = {i['name']: i['value'] for i in inputs}
-        if not final_data:
-            raise RuntimeError
-
-        final_data['notes'] = ' '
-
-        return final_data

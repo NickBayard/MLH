@@ -92,6 +92,8 @@ class Appointment:
                 yield ChildTypeError
                 continue
 
+            sleep(5)  # We need to give the page time to build
+
             try:
                 self.collect_child_ids()
             except ParseChildIdError:
@@ -179,19 +181,20 @@ class Appointment:
             # as the key to the user_data.children dictionary to look up the type
             child_type = self.store.user_data.children[self.appt.children[0]].type
             self.browser.find_by_name('e_id').select(child_types[child_type])
-            sleep(5)  # We need to give the page time to build
         except:
             raise ChildTypeError
 
     def collect_child_ids(self):
         logging.info('enter')
-        self.child_ids = None
+        self.child_ids = {}
+        ids_were_parsed = False
         for name, child in self.store.user_data.children.items():
             if not child.id:
                 self.child_ids = self.parser.get_child_ids(self.browser.html)
+                ids_were_parsed = True
                 break
 
-        if self.child_ids:
+        if ids_were_parsed:
             logging.debug('child_ids : {}'.format(self.child_ids))
             logging.debug('persitant child_ids : {}'.format(
                           self.store.user_data.children.items()))
@@ -200,6 +203,11 @@ class Appointment:
                 if name in self.child_ids:
                     child.id = self.child_ids[name]
                     self.is_store_updated = True
+        else:
+            # Ids weren't parsed because all children in the persistant store
+            # had an id saved already. Copy these values into self.child_ids
+            for name, child in self.store.user_data.children.items():
+                self.child_ids[name] = child.id
 
     def collect_available_times(self):
         logging.info("enter")
@@ -254,5 +262,8 @@ class Appointment:
                     self.appt.datetime.strftime('%d').lstrip('0') + \
                     self.appt.datetime.strftime(', %Y at %I:%M') + \
                     self.appt.datetime.strftime('%p').lower()
+
+        pdb.set_trace()
+
         if not self.browser.find_link_by_partial_text(link_text):
             raise VerifyError

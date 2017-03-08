@@ -4,10 +4,9 @@ from copy import copy
 from Appointment import Appointment, AppointmentError
 from Appointment import LoginError, DurationError, ChildTypeError
 from Appointment import SelectDateError, SelectTimeError, FinalizeError
-from Appointment import UnableToBookAppointmentError
+from Appointment import UnableToBookAppointmentError, VerifyError
 from ScheduleChecker import ScheduleChecker, ScheduleError
-from Parser import ParseError, ParseCustomerIdError
-from Parser import ParseChildIdError, ParseAvailableDatesError
+from Parser import ParseError, ParseChildIdError, ParseAvailableDatesError
 
 
 class AppointmentHandler:
