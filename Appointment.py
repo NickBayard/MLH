@@ -83,13 +83,13 @@ class Appointment:
             try:
                 self.set_duration()
             except DurationError:
-                yield DurationError
+                yield DurationError, self.appt
                 continue
 
             try:
                 self.select_child_type()
             except ChildTypeError:
-                yield ChildTypeError
+                yield ChildTypeError, self.appt
                 continue
 
             sleep(5)  # We need to give the page time to build
@@ -97,7 +97,7 @@ class Appointment:
             try:
                 self.collect_child_ids()
             except ParseChildIdError:
-                yield ParseChildIdError
+                yield ParseChildIdError, self.appt
                 continue
 
             if first_pass:
@@ -105,9 +105,13 @@ class Appointment:
                 try:
                     self.collect_available_times()
                 except ParseAvailableDatesError:
-                    yield ParseAvailableDatesError
+                    yield ParseAvailableDatesError, self.appt
+                    self.close()
+                    return  # Fatal error
                 except SelectDateError:
-                    yield SelectDateError
+                    yield SelectDateError, self.appt
+                    self.close()
+                    return  # Fatal error
 
             logging.debug("available times")
             logging.debug(self.available_times)
@@ -117,33 +121,36 @@ class Appointment:
                 try:
                     self.select_date(self.appt.datetime)
                 except SelectDateError:
-                    yield SelectDateError
+                    yield SelectDateError, self.appt
                     continue
 
                 try:
                     self.select_time()
                 except SelectTimeError:
-                    yield SelectTimeError
+                    yield SelectTimeError, self.appt
                     continue
 
                 try:
                     pass
                     self.finalize_appointment()
                 except FinalizeError:
-                    yield FinalizeError
+                    yield FinalizeError, self.appt
+                    continue
+
+                try:
+                    self.verify_appointment()
+                except VerifyError:
+                    yield VerifyError, self.appt
                     continue
             else:
-                yield UnableToBookAppointmentError
-
-            try:
-                self.verify_appointment()
-            except VerifyError:
-                yield VerifyError
+                yield UnableToBookAppointmentError, self.appt
                 continue
 
             # Successfully booked appointment
-            self.close()
-            yield True
+            yield True, self.appt
+
+        # All appointments have been iterated through
+        self.close()
 
     def update_store(self):
         return self.is_store_updated
@@ -263,7 +270,7 @@ class Appointment:
                     self.appt.datetime.strftime(', %Y at %I:%M') + \
                     self.appt.datetime.strftime('%p').lower()
 
-        pdb.set_trace()
+        sleep(2)
 
         if not self.browser.find_link_by_partial_text(link_text):
             raise VerifyError

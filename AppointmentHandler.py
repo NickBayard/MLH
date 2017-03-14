@@ -19,14 +19,12 @@ class AppointmentHandler:
         self.store = self.persist.get_data()
         self.appointments = self.store.appointments
 
-    def handle_error(self, error):
-        logging.debug('Failed due to {}'.format(error))
-        self.appt.close()
-        raise error
+    def handle_error(self, error, appt):
+        logging.info('Appointment {} failed : {}'.format(appt, error))
 
-    def handle_result(self, result):
-        # FIXME
-        logging.debug('Success {}'.format(result))
+    def handle_result(self, result, appt):
+        # TODO Send an email/text
+        logging.info('Booked appointment {}'.format(appt))
 
     def run(self):
         # Copy items in appointments that can possibly be booked
@@ -43,11 +41,11 @@ class AppointmentHandler:
 
         self.appt = Appointment(self.store, schedule)
 
-        for result in self.appt.book():
+        for result, appt in self.appt.book():
             if issubclass(type(result), AppointmentError) or issubclass(type(result), ParseError):
-                self.handle_error(result)
+                self.handle_error(result, appt)
             else:
-                self.handle_result(result)
+                self.handle_result(result, appt)
 
         self.appt.close()
 

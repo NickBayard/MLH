@@ -74,21 +74,18 @@ def validate_duration(duration):
 
 
 def validate_args(args, persist):
-    if not args.children and not args.date and not args.time and not args.duration:
-        # User wants to book appointments in persistant store only
-        return
+    args.new_appt = False
 
-    # User wants to book a specific appointment
-    # We need to make sure that all arguments are completed
-    validate_children(args.children, persist)
+    if args.children or args.date or args.time or args.duration:
+        # User wants to schedule a new appointment
+        args.new_appt = True
 
-    validate_duration(args.duration)
+        # We need to make sure that all arguments are completed
+        validate_children(args.children, persist)
 
-    validate_datetime(args)
+        validate_duration(args.duration)
 
-    args.new_appt = True
-
-    return args
+        validate_datetime(args)
 
 
 def split_appointments(store, args):
@@ -126,6 +123,8 @@ def parse_args():
                         help='Clear appointments that have yet to be booked.')
     parser.add_argument('-l', dest='log_level', choices=['debug', 'info'], default='info',
                         help='log level')
+    parser.add_argument('--execute', action='store_true',
+                        help='Book appointments from the persistant store now')
 
     return parser.parse_args()
 
@@ -142,8 +141,9 @@ def main(args):
     if args.clear:
         store.appointments.clear() 
         persist.set_data()
+        return
 
-    args = validate_args(args, store)
+    validate_args(args, store)
 
     if args.new_appt:  # We want to schedule a new appointment
         # If an appointment was specified with children and infants,
@@ -155,14 +155,15 @@ def main(args):
             for new_appt in copy(appts):
                 if new_appt == appt:
                     appts.remove(new_appt)
-            
+
         store.appointments.extend(appts)
 
         persist.set_data()
 
     # book all available scheduled appointments
-    handler = AppointmentHandler(persist)
-    handler.run()
+    if args.execute:
+        handler = AppointmentHandler(persist)
+        handler.run()
 
 
 if __name__ == '__main__':
