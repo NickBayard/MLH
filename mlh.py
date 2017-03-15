@@ -1,7 +1,6 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import pdb
 import logging
 import argparse
 from datetime import datetime
@@ -118,7 +117,8 @@ def parse_args():
     parser.add_argument('-t', dest='time', metavar='HHMM',
                         help='''Specify the time to book.  HH is 00-23.''')
     parser.add_argument('-r', dest='duration', metavar='MINUTES', type=int,
-                        default=90, help='''Specfiy the duration of the appointment.''')
+                        choices=list(Appointment.durations.keys()), 
+                        help='''Specfiy the duration of the appointment.''')
     parser.add_argument('-x', dest='clear', action='store_true', 
                         help='Clear appointments that have yet to be booked.')
     parser.add_argument('-l', dest='log_level', choices=['debug', 'info'], default='info',

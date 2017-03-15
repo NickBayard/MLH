@@ -1,3 +1,4 @@
+import pdb
 import logging
 from copy import copy
 
@@ -24,7 +25,12 @@ class AppointmentHandler:
 
     def handle_result(self, result, appt):
         # TODO Send an email/text
+
         logging.info('Booked appointment {}'.format(appt))
+
+        for index, store_appt in copy(self.store.appointments):
+            if store_appt == appt:
+                self.store.appointments.remove(appt)
 
     def run(self):
         # Copy items in appointments that can possibly be booked
@@ -46,8 +52,6 @@ class AppointmentHandler:
                 self.handle_error(result, appt)
             else:
                 self.handle_result(result, appt)
-
-        self.appt.close()
 
         if self.appt.update_store():
             self.persist.set_data()

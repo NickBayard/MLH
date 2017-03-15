@@ -1,4 +1,3 @@
-import pdb
 import logging
 from time import sleep
 from datetime import datetime, timedelta
@@ -167,7 +166,7 @@ class Appointment:
 
     def close(self):
         self.browser.click_link_by_partial_href('logout')
-        sleep(1)
+        sleep(2)
         self.browser.quit()
 
     def set_duration(self):
