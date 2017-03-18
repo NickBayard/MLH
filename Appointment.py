@@ -1,3 +1,4 @@
+import pdb
 import logging
 from time import sleep
 from datetime import datetime, timedelta
@@ -130,7 +131,6 @@ class Appointment:
                     continue
 
                 try:
-                    pass
                     self.finalize_appointment()
                 except FinalizeError:
                     yield FinalizeError, self.appt

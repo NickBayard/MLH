@@ -28,7 +28,7 @@ class AppointmentHandler:
 
         logging.info('Booked appointment {}'.format(appt))
 
-        for index, store_appt in copy(self.store.appointments):
+        for store_appt in copy(self.store.appointments):
             if store_appt == appt:
                 self.store.appointments.remove(appt)
 

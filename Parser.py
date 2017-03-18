@@ -1,6 +1,7 @@
 import re
 import bs4
 from datetime import datetime
+from copy import copy
 
 
 class ParseError(Exception):
@@ -30,6 +31,9 @@ class Parser:
 
         if len(names) != len(ids):
             raise ParseChildIdError
+
+        for index, name in enumerate(copy(names)):
+            names[index] = name[:-2] if name.endswith('18') else name
 
         child_ids = dict(zip(names, ids))
 

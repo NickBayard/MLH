@@ -125,6 +125,8 @@ def parse_args():
                         help='log level')
     parser.add_argument('--execute', action='store_true',
                         help='Book appointments from the persistant store now')
+    parser.add_argument('-p', dest='print_store', action='store_true',
+                        help='Print the contents of the persistant store')
 
     return parser.parse_args()
 
@@ -137,6 +139,10 @@ def main(args):
     persist = Persist('db.pick')
 
     store = persist.get_data()
+
+    if args.print_store:
+        print(store)
+        return
 
     if args.clear:
         store.appointments.clear() 
