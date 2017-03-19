@@ -249,7 +249,9 @@ class Appointment:
     def select_time(self):
         logging.info("enter")
         try:
-            time_string = self.appt.datetime.strftime('%I:%M') + \
+            # Format the time with leading 0s stripped and lowercase am/pm
+            time_string = self.appt.datetime.strftime('%I').lstrip('0') + \
+                          self.appt.datetime.strftime(':%M') + \
                           self.appt.datetime.strftime('%p').lower()
             xpath = "//tr[td='{}']/td/font/form[@name='gridSubmitForm']/a".format(time_string)
             self.browser.find_by_xpath(xpath).click()
