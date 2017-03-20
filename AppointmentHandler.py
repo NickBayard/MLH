@@ -20,7 +20,7 @@ class AppointmentHandler:
         self.store = self.persist.get_data()
         self.appointments = self.store.appointments
 
-    def handle_error(self, error, appt):
+    def handle_error(self, error, appt=None):
         logging.info('Appointment {} failed : {}'.format(appt, error))
 
     def handle_result(self, result, appt):
@@ -47,12 +47,16 @@ class AppointmentHandler:
 
         self.appt = Appointment(self.store, schedule)
 
-        for result, appt in self.appt.book():
-            if issubclass(type(result), AppointmentError) or issubclass(type(result), ParseError):
-                self.handle_error(result, appt)
-            else:
-                self.handle_result(result, appt)
+        try:
+            for result, appt in self.appt.book():
+                if issubclass(type(result), AppointmentError) or issubclass(type(result), ParseError):
+                    self.handle_error(result, appt)
+                else:
+                    self.handle_result(result, appt)
+        except Exception as ex:
+            self.handle_error(ex)
 
-        if self.appt.update_store():
-            self.persist.set_data()
-            self.store = self.persist.get_data()
+        # There are several instances in which we need to update the persistant store.
+        # Rather than attemp to track them all, just update the store each time regardless.
+        self.persist.set_data()
+        self.store = self.persist.get_data()

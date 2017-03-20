@@ -69,84 +69,49 @@ class Appointment:
 
     def book(self):
         first_pass = True
+        RETRY_COUNT = 5
 
         self.browser.visit(self.url)
 
         try:
             self.login()
-        except LoginError:
-            return LoginError
-        except ParseCustomerIdError:
-            return ParseCustomerIdError
+        except Exception as ex:
+            raise ex
 
         for self.appt in self.appointments:
-            try:
-                self.set_duration()
-            except DurationError:
-                yield DurationError, self.appt
-                continue
-
-            try:
-                self.select_child_type()
-            except ChildTypeError:
-                yield ChildTypeError, self.appt
-                continue
-
-            sleep(5)  # We need to give the page time to build
-
-            try:
-                self.collect_child_ids()
-            except ParseChildIdError:
-                yield ParseChildIdError, self.appt
-                continue
-
-            if first_pass:
-                first_pass = False
+            retry = 0
+            while retry < RETRY_COUNT:
                 try:
-                    self.collect_available_times()
-                except ParseAvailableDatesError:
-                    yield ParseAvailableDatesError, self.appt
-                    self.close()
-                    return  # Fatal error
-                except SelectDateError:
-                    yield SelectDateError, self.appt
-                    self.close()
-                    return  # Fatal error
+                    self.set_duration()
+                    self.select_child_type()
+                    self.collect_child_ids()
 
-            logging.debug("available times")
-            logging.debug(self.available_times)
-            logging.debug("appt {}".format(self.appt.datetime))
+                    if first_pass:
+                        first_pass = False
+                        self.collect_available_times()
 
-            if self.appt.datetime in self.available_times:
-                try:
-                    self.select_date(self.appt.datetime)
-                except SelectDateError:
-                    yield SelectDateError, self.appt
-                    continue
+                        logging.debug("available times")
+                        logging.debug(self.available_times)
+                        logging.debug("appt {}".format(self.appt.datetime))
 
-                try:
-                    self.select_time()
-                except SelectTimeError:
-                    yield SelectTimeError, self.appt
-                    continue
+                    if self.appt.datetime in self.available_times:
+                        self.select_date(self.appt.datetime)
+                        self.select_time()
+                        self.finalize_appointment()
+                        self.verify_appointment()
 
-                try:
-                    self.finalize_appointment()
-                except FinalizeError:
-                    yield FinalizeError, self.appt
-                    continue
+                        # Successfully booked appointment
+                        yield True, self.appt
+                        break # from While retry loop
+                    else:
+                        raise UnableToBookAppointmentError
 
-                try:
-                    self.verify_appointment()
-                except VerifyError:
-                    yield VerifyError, self.appt
-                    continue
-            else:
-                yield UnableToBookAppointmentError, self.appt
-                continue
-
-            # Successfully booked appointment
-            yield True, self.appt
+                except Exception as ex:
+                    if ex is UnableToBookAppointmentError or retry >= RETRY_COUNT:
+                        yield ex, self.appt
+                        break # from While retry loop
+                    else:
+                        retry += 1
 
         # All appointments have been iterated through
         self.close()
@@ -187,6 +152,7 @@ class Appointment:
             # as the key to the user_data.children dictionary to look up the type
             child_type = self.store.user_data.children[self.appt.children[0]].type
             self.browser.find_by_name('e_id').select(child_types[child_type])
+            sleep(5)  # We need to give the page time to build
         except:
             raise ChildTypeError
 
