@@ -79,6 +79,7 @@ class Appointment:
             raise ex
 
         for self.appt in self.appointments:
+            logging.info("Booking appointment\n{}".format(self.appt))
             retry = 0
             while retry < RETRY_COUNT:
                 try:
@@ -86,16 +87,15 @@ class Appointment:
                     self.select_child_type()
                     self.collect_child_ids()
 
-                    if first_pass:
-                        first_pass = False
-                        self.collect_available_times()
+                    self.collect_available_dates()
 
-                        logging.debug("available times")
-                        logging.debug(self.available_times)
-                        logging.debug("appt {}".format(self.appt.datetime))
-
-                    if self.appt.datetime in self.available_times:
+                    if self.appt.datetime.date() in self.available_dates:
                         self.select_date(self.appt.datetime)
+                    else:
+                        raise UnableToBookAppointmentError
+
+                    self.collect_available_times()
+                    if self.appt.datetime in self.available_times:
                         self.select_time()
                         self.finalize_appointment()
                         self.verify_appointment()
@@ -150,6 +150,7 @@ class Appointment:
         try:
             # Grab the first child name from the appointment list and use that
             # as the key to the user_data.children dictionary to look up the type
+            pdb.set_trace()
             child_type = self.store.user_data.children[self.appt.children[0]].type
             self.browser.find_by_name('e_id').select(child_types[child_type])
             sleep(5)  # We need to give the page time to build
@@ -181,33 +182,33 @@ class Appointment:
             for name, child in self.store.user_data.children.items():
                 self.child_ids[name] = child.id
 
-    def collect_available_times(self):
+    def collect_available_dates(self):
         logging.info("enter")
-        available_dates = self.parser.get_available_dates(self.browser.html)
+        self.available_dates = self.parser.get_available_dates(self.browser.html)
 
-        logging.debug("available dates {}".format(available_dates))
+        logging.debug("available dates {}".format(self.available_dates))
+
+    def collect_available_times(self):
         self.available_times = []
 
-        for date in available_dates:
-            self.select_date(date)
-            sleep(6)
+        sleep(6)
 
-            formatted_times = self.parser.get_available_times(self.browser.html)
-            logging.debug("date {} formatted times {}".format(date, formatted_times))
-            self.available_times.extend([datetime(year=date.year,
-                                                  month=date.month,
-                                                  day=date.day,
-                                                  hour=int(int(time) / 60),
-                                                  minute=int(time) % 60)
-                                         for time in formatted_times])
+        formatted_times = self.parser.get_available_times(self.browser.html)
+        logging.debug("date {} formatted times {}".format(date, formatted_times))
+        self.available_times.extend([datetime(year=self.appt.datetime.year,
+                                                month=self.appt.datetime.month,
+                                                day=self.appt.datetime.day,
+                                                hour=int(int(time) / 60),
+                                                minute=int(time) % 60)
+                                        for time in formatted_times])
 
     def select_date(self, date):
         logging.info("{}".format(date))
 
-        for child in self.appt.children:
-            self.browser.check(self.child_ids[child])
-
         try:
+            for child in self.appt.children:
+                self.browser.check(self.child_ids[child])
+
             self.browser.click_link_by_text(date.day)
         except:
             raise SelectDateError(date)

@@ -25,13 +25,12 @@ def validate_children(children, persist):
         for child in range(count):
             while True:
                 name = input_with_quit('Please enter the name for child {}'.format(child + 1))
-                name18 = '{}18'.format(name)
-                if name18 not in persist.user_data.children:
+                if name not in persist.user_data.children:
                     print('{} not a valid child name'.format(name))
                 else:
                     break
 
-            children.append(name18)
+            children.append(name)
 
 
 def validate_datetime(args):
@@ -133,7 +132,7 @@ def parse_args():
 
 def main(args):
     log_level = getattr(logging, args.log_level.upper(), None)
-    logging.basicConfig(filename='log.log', level=log_level if log_level else logging.INFO,
+    logging.basicConfig(filename='log', level=log_level if log_level else logging.INFO,
                         format='%(asctime)s[%(levelname)s]<%(name)s>|%(funcName)s:%(message)s')
 
     persist = Persist('db.pick')

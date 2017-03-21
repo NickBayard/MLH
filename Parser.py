@@ -50,7 +50,7 @@ class Parser:
         for link in links:
             m = re.search("dosubmit\('(\d{8})',", link)
             if m:
-                open_dates.append(datetime.strptime(m.group(1), '%Y%m%d'))
+                open_dates.append(datetime.strptime(m.group(1), '%Y%m%d').date())
 
         if not open_dates:
             raise ParseAvailableDatesError
