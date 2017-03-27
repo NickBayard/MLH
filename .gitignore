@@ -90,3 +90,9 @@ ENV/
 
 #pickle file
 *.pick
+
+# Logging generated logs
+log
+
+# ctags
+tags
