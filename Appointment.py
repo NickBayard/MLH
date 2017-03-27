@@ -152,7 +152,7 @@ class Appointment:
     def select_appointments(self):
         self.logger.info("enter")
         try:
-            self.browser.find_link_by_href(self.url + 'appointments')
+            self.browser.click_link_by_href(self.url + 'appointments')
         except:
             raise ApptLinkError
 

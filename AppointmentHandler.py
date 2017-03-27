@@ -21,7 +21,7 @@ class AppointmentHandler:
         self.logger = logging.getLogger('mlh_logger')
 
     def handle_error(self, error, appt=None):
-        self.logger.info('Appointment {} failed : {}'.format(appt, error))
+        self.logger.info('Appointment failed {}\n{}'.format(error, appt))
 
     def handle_result(self, appt):
         # TODO Send an email/text
