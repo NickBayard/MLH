@@ -1,4 +1,3 @@
-import pdb
 import logging
 from copy import copy
 
@@ -19,14 +18,15 @@ class AppointmentHandler:
         self.persist = persist
         self.store = self.persist.get_data()
         self.appointments = self.store.appointments
+        self.logger = logging.getLogger('mlh_logger')
 
     def handle_error(self, error, appt=None):
-        logging.info('Appointment {} failed : {}'.format(appt, error))
+        self.logger.info('Appointment {} failed : {}'.format(appt, error))
 
-    def handle_result(self, result, appt):
+    def handle_result(self, appt):
         # TODO Send an email/text
 
-        logging.info('Booked appointment {}'.format(appt))
+        self.logger.info('Booked appointment\n{}'.format(appt))
 
         for store_appt in copy(self.store.appointments):
             if store_appt == appt:
@@ -49,10 +49,10 @@ class AppointmentHandler:
 
         try:
             for result, appt in self.appt.book():
-                if issubclass(type(result), AppointmentError) or issubclass(type(result), ParseError):
+                if issubclass(type(result), Exception):
                     self.handle_error(result, appt)
                 else:
-                    self.handle_result(result, appt)
+                    self.handle_result(appt)
         except Exception as ex:
             self.handle_error(ex)
 

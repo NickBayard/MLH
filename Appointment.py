@@ -66,10 +66,11 @@ class Appointment:
         self.appointments = appointments
 
         self.parser = Parser()
+        self.logger = logging.getLogger('mlh_logger')
 
     def book(self):
         first_pass = True
-        RETRY_COUNT = 5
+        #RETRY_COUNT = 5
 
         self.browser.visit(self.url)
 
@@ -79,39 +80,48 @@ class Appointment:
             raise ex
 
         for self.appt in self.appointments:
-            logging.info("Booking appointment\n{}".format(self.appt))
-            retry = 0
-            while retry < RETRY_COUNT:
-                try:
-                    self.set_duration()
-                    self.select_child_type()
-                    self.collect_child_ids()
+            self.logger.info("Booking appointment\n{}".format(self.appt))
+            #retry = 0
+            #while retry < RETRY_COUNT:
+            try:
+                self.set_duration()
+                sleep(3)
+                self.select_child_type()
+                sleep(5)
+                self.collect_child_ids()
 
-                    self.collect_available_dates()
+                self.collect_available_dates()
 
-                    if self.appt.datetime.date() in self.available_dates:
-                        self.select_date(self.appt.datetime)
-                    else:
-                        raise UnableToBookAppointmentError
+                if self.appt.datetime.date() in self.available_dates:
+                    self.select_date(self.appt.datetime)
+                else:
+                    raise UnableToBookAppointmentError
 
-                    self.collect_available_times()
-                    if self.appt.datetime in self.available_times:
-                        self.select_time()
-                        self.finalize_appointment()
-                        self.verify_appointment()
+                sleep(6)
+                self.collect_available_times()
+                if self.appt.datetime in self.available_times:
+                    self.select_time()
+                    sleep(5)
+                    self.finalize_appointment()
+                    sleep(5)
+                    self.verify_appointment()
 
-                        # Successfully booked appointment
-                        yield True, self.appt
-                        break # from While retry loop
-                    else:
-                        raise UnableToBookAppointmentError
+                    # Successfully booked appointment
+                    yield True, self.appt
+                    #break # from While retry loop
+                else:
+                    raise UnableToBookAppointmentError
 
-                except Exception as ex:
-                    if ex is UnableToBookAppointmentError or retry >= RETRY_COUNT:
-                        yield ex, self.appt
-                        break # from While retry loop
-                    else:
-                        retry += 1
+                print("We got here")
+                sleep(5)  # Wait for a bit before booking the next appointment
+                print("Waited 5 seconds")
+
+            except Exception as ex:
+                #if ex is UnableToBookAppointmentError or retry >= RETRY_COUNT:
+                yield ex, self.appt
+                #break # from While retry loop
+                #else:
+                    #retry += 1
 
         # All appointments have been iterated through
         self.close()
@@ -120,7 +130,7 @@ class Appointment:
         return self.is_store_updated
 
     def login(self):
-        logging.info("enter")
+        self.logger.info("enter")
 
         try:
             self.browser.fill('loginname', self.store.user_data.user)
@@ -135,14 +145,14 @@ class Appointment:
         self.browser.quit()
 
     def set_duration(self):
-        logging.info("enter")
+        self.logger.info("enter")
         try:
             self.browser.find_by_name('service_id').select(self.durations[self.appt.duration])
         except:
             raise DurationError
 
     def select_child_type(self):
-        logging.info("enter")
+        self.logger.info("enter")
         child_types = {
             'child': '782',
             'infant': '783'}
@@ -150,15 +160,13 @@ class Appointment:
         try:
             # Grab the first child name from the appointment list and use that
             # as the key to the user_data.children dictionary to look up the type
-            pdb.set_trace()
             child_type = self.store.user_data.children[self.appt.children[0]].type
             self.browser.find_by_name('e_id').select(child_types[child_type])
-            sleep(5)  # We need to give the page time to build
         except:
             raise ChildTypeError
 
     def collect_child_ids(self):
-        logging.info('enter')
+        self.logger.info('enter')
         self.child_ids = {}
         ids_were_parsed = False
         for name, child in self.store.user_data.children.items():
@@ -168,8 +176,8 @@ class Appointment:
                 break
 
         if ids_were_parsed:
-            logging.debug('child_ids : {}'.format(self.child_ids))
-            logging.debug('persitant child_ids : {}'.format(
+            self.logger.debug('child_ids : {}'.format(self.child_ids))
+            self.logger.debug('persitant child_ids : {}'.format(
                           self.store.user_data.children.items()))
 
             for name, child in self.store.user_data.children.items():
@@ -183,18 +191,16 @@ class Appointment:
                 self.child_ids[name] = child.id
 
     def collect_available_dates(self):
-        logging.info("enter")
+        self.logger.info("enter")
         self.available_dates = self.parser.get_available_dates(self.browser.html)
 
-        logging.debug("available dates {}".format(self.available_dates))
+        self.logger.debug("available dates {}".format(self.available_dates))
 
     def collect_available_times(self):
         self.available_times = []
 
-        sleep(6)
-
         formatted_times = self.parser.get_available_times(self.browser.html)
-        logging.debug("date {} formatted times {}".format(date, formatted_times))
+        self.logger.debug("formatted times {}".format(formatted_times))
         self.available_times.extend([datetime(year=self.appt.datetime.year,
                                                 month=self.appt.datetime.month,
                                                 day=self.appt.datetime.day,
@@ -203,7 +209,7 @@ class Appointment:
                                         for time in formatted_times])
 
     def select_date(self, date):
-        logging.info("{}".format(date))
+        self.logger.info("{}".format(date))
 
         try:
             for child in self.appt.children:
@@ -214,7 +220,7 @@ class Appointment:
             raise SelectDateError(date)
 
     def select_time(self):
-        logging.info("enter")
+        self.logger.info("enter")
         try:
             # Format the time with leading 0s stripped and lowercase am/pm
             time_string = self.appt.datetime.strftime('%I').lstrip('0') + \
@@ -226,19 +232,18 @@ class Appointment:
             raise SelectTimeError
 
     def finalize_appointment(self):
+        self.logger.info("enter")
         try:
-            sleep(2)
             self.browser.find_by_name('finalize_appt').click() 
         except:
             raise FinalizeError
 
     def verify_appointment(self):
+        self.logger.info("enter")
         link_text = self.appt.datetime.strftime('%A, %B ') + \
                     self.appt.datetime.strftime('%d').lstrip('0') + \
                     self.appt.datetime.strftime(', %Y at %I:%M') + \
                     self.appt.datetime.strftime('%p').lower()
-
-        sleep(2)
 
         if not self.browser.find_link_by_partial_text(link_text):
             raise VerifyError

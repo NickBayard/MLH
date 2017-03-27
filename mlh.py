@@ -130,10 +130,26 @@ def parse_args():
     return parser.parse_args()
 
 
+def configure_logging(log_level):
+    logger = logging.getLogger('mlh_logger')
+
+    log_level = getattr(logging, log_level.upper(), None)
+    logger.setLevel(log_level)
+
+    fh = logging.FileHandler('log')
+    sh = logging.StreamHandler()
+
+    fileFormatter = logging.Formatter('%(asctime)s[%(levelname)s]<%(name)s>|%(funcName)s:%(message)s')
+    streamFormatter = logging.Formatter('%(funcName)s:%(message)s')
+
+    fh.setFormatter(fileFormatter)
+    sh.setFormatter(streamFormatter)
+    
+    logger.addHandler(fh)
+    logger.addHandler(sh)
+
 def main(args):
-    log_level = getattr(logging, args.log_level.upper(), None)
-    logging.basicConfig(filename='log', level=log_level if log_level else logging.INFO,
-                        format='%(asctime)s[%(levelname)s]<%(name)s>|%(funcName)s:%(message)s')
+    configure_logging(args.log_level)
 
     persist = Persist('db.pick')
 
