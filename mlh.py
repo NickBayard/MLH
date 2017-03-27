@@ -140,7 +140,7 @@ def configure_logging(log_level):
     sh = logging.StreamHandler()
 
     fileFormatter = logging.Formatter('%(asctime)s[%(levelname)s]<%(name)s>|%(funcName)s:%(message)s')
-    streamFormatter = logging.Formatter('%(funcName)s:%(message)s')
+    streamFormatter = logging.Formatter('%(asctime)s|%(funcName)s:%(message)s')
 
     fh.setFormatter(fileFormatter)
     sh.setFormatter(streamFormatter)

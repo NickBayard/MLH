@@ -1,3 +1,4 @@
+import sys
 import pdb
 import logging
 from time import sleep
@@ -12,6 +13,10 @@ class AppointmentError(Exception):
 
 
 class LoginError(AppointmentError):
+    pass
+
+
+class ApptLinkError(AppointmentError):
     pass
 
 
@@ -84,6 +89,8 @@ class Appointment:
             #retry = 0
             #while retry < RETRY_COUNT:
             try:
+                self.select_appointments()
+                sleep(2)
                 self.set_duration()
                 sleep(3)
                 self.select_child_type()
@@ -101,7 +108,7 @@ class Appointment:
                 self.collect_available_times()
                 if self.appt.datetime in self.available_times:
                     self.select_time()
-                    sleep(5)
+                    sleep(3)
                     self.finalize_appointment()
                     sleep(5)
                     self.verify_appointment()
@@ -112,9 +119,7 @@ class Appointment:
                 else:
                     raise UnableToBookAppointmentError
 
-                print("We got here")
-                sleep(5)  # Wait for a bit before booking the next appointment
-                print("Waited 5 seconds")
+                sleep(1)  # Wait for a bit before booking the next appointment
 
             except Exception as ex:
                 #if ex is UnableToBookAppointmentError or retry >= RETRY_COUNT:
@@ -143,6 +148,13 @@ class Appointment:
         self.browser.click_link_by_partial_href('logout')
         sleep(2)
         self.browser.quit()
+
+    def select_appointments(self):
+        self.logger.info("enter")
+        try:
+            self.browser.find_link_by_href(self.url + 'appointments')
+        except:
+            raise ApptLinkError
 
     def set_duration(self):
         self.logger.info("enter")
@@ -242,7 +254,9 @@ class Appointment:
         self.logger.info("enter")
         link_text = self.appt.datetime.strftime('%A, %B ') + \
                     self.appt.datetime.strftime('%d').lstrip('0') + \
-                    self.appt.datetime.strftime(', %Y at %I:%M') + \
+                    self.appt.datetime.strftime(', %Y at ') + \
+                    self.appt.datetime.strftime('%I').lstrip('0') + \
+                    self.appt.datetime.strftime(':%M') + \
                     self.appt.datetime.strftime('%p').lower()
 
         if not self.browser.find_link_by_partial_text(link_text):
