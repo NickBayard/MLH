@@ -50,7 +50,7 @@ class AppointmentHandler:
         try:
             for result, appt in self.appt.book():
                 if issubclass(type(result), Exception):
-                    self.handle_error(result, appt)
+                    self.handle_error(type(result), appt)
                 else:
                     self.handle_result(appt)
         except Exception as ex:

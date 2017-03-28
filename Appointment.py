@@ -135,7 +135,7 @@ class Appointment:
         return self.is_store_updated
 
     def login(self):
-        self.logger.info("enter")
+        self.logger.debug("enter")
 
         try:
             self.browser.fill('loginname', self.store.user_data.user)
@@ -150,21 +150,21 @@ class Appointment:
         self.browser.quit()
 
     def select_appointments(self):
-        self.logger.info("enter")
+        self.logger.debug("enter")
         try:
             self.browser.click_link_by_href(self.url + 'appointments')
         except:
             raise ApptLinkError
 
     def set_duration(self):
-        self.logger.info("enter")
+        self.logger.debug("enter")
         try:
             self.browser.find_by_name('service_id').select(self.durations[self.appt.duration])
         except:
             raise DurationError
 
     def select_child_type(self):
-        self.logger.info("enter")
+        self.logger.debug("enter")
         child_types = {
             'child': '782',
             'infant': '783'}
@@ -178,7 +178,7 @@ class Appointment:
             raise ChildTypeError
 
     def collect_child_ids(self):
-        self.logger.info('enter')
+        self.logger.debug('enter')
         self.child_ids = {}
         ids_were_parsed = False
         for name, child in self.store.user_data.children.items():
@@ -203,7 +203,7 @@ class Appointment:
                 self.child_ids[name] = child.id
 
     def collect_available_dates(self):
-        self.logger.info("enter")
+        self.logger.debug("enter")
         self.available_dates = self.parser.get_available_dates(self.browser.html)
 
         self.logger.debug("available dates {}".format(self.available_dates))
@@ -221,7 +221,7 @@ class Appointment:
                                         for time in formatted_times])
 
     def select_date(self, date):
-        self.logger.info("{}".format(date))
+        self.logger.debug("{}".format(date))
 
         try:
             for child in self.appt.children:
@@ -232,7 +232,7 @@ class Appointment:
             raise SelectDateError(date)
 
     def select_time(self):
-        self.logger.info("enter")
+        self.logger.debug("enter")
         try:
             # Format the time with leading 0s stripped and lowercase am/pm
             time_string = self.appt.datetime.strftime('%I').lstrip('0') + \
@@ -244,14 +244,14 @@ class Appointment:
             raise SelectTimeError
 
     def finalize_appointment(self):
-        self.logger.info("enter")
+        self.logger.debug("enter")
         try:
             self.browser.find_by_name('finalize_appt').click() 
         except:
             raise FinalizeError
 
     def verify_appointment(self):
-        self.logger.info("enter")
+        self.logger.debug("enter")
         link_text = self.appt.datetime.strftime('%A, %B ') + \
                     self.appt.datetime.strftime('%d').lstrip('0') + \
                     self.appt.datetime.strftime(', %Y at ') + \
