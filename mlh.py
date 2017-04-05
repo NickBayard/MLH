@@ -113,7 +113,7 @@ def parse_args():
                         help='Book appointments from the persistant store now')
     parser.add_argument('-p', dest='print_store', action='store_true',
                         help='Print the contents of the persistant store')
-    parser.add_argument('-g', dest=gui, action='store_true',
+    parser.add_argument('-g', dest='gui', action='store_true',
                         help='Start MLH GUI')
 
     return parser.parse_args()
@@ -142,7 +142,7 @@ class Mlh():
     def __init__(self):
         self.persist = Persist('db.pick')
 
-        self.store = persist.get_data()
+        self.store = self.persist.get_data()
     
     def print_store(self):
         print(self.store)
@@ -158,7 +158,7 @@ class Mlh():
         handler.run()
         return
 
-    def run_gui():
+    def run_gui(self):
         myGui = mlhGui.mlhGui(self, list(self.store.user_data.children.keys()))
 
     def split_appointments(schedule):
