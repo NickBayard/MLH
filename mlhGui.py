@@ -6,34 +6,43 @@ from PyQt5 import QtWidgets
 
 from mainwindow import Ui_MainWindow
 from ScheduleChecker import ScheduleChecker
+from PersistantData import Schedule
 
 class mlhWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self, mlh, children, parent=None):
         super().__init__(parent)
         self.setupUi(self)
+        self.backend = mlh
 
         # Add children to list
         for child in children:
             self.listWidget.addItem(QtWidgets.QListWidgetItem(child))
 
-        self.fill_times(self.calendarWidget.selectedDate())
+        self.fill_times()
+        self.calendarWidget.selectionChanged.connect(self.set_date)
 
-    def fill_times(self, date):
+        self.pushButton.clicked.connect(self.add_appointment)
+
+    def set_date(self):
+        self.selected_date = self.calendarWidget.selectedDate()
+        self.fill_times()
+
+    def fill_times(self):
         self.comboBox.clear()
 
-        weekday = ScheduleChecker.WeekDay(date.dayOfWeek() - 1)
+        weekday = ScheduleChecker.WeekDay(self.selected_date.dayOfWeek() - 1)
 
         time_limit = ScheduleChecker.timeLimits[weekday]
 
-        start = datetime(year=date.year(),
-                         month=date.month(),
-                         day=date.day(),
+        start = datetime(year=self.selected_date.year(),
+                         month=self.selected_date.month(),
+                         day=self.selected_date.day(),
                          hour=time_limit.start.hour,
                          minute=time_limit.start.minute)
 
-        stop = datetime(year=date.year(),
-                         month=date.month(),
-                         day=date.day(),
+        stop = datetime(year=self.selected_date.year(),
+                         month=self.selected_date.month(),
+                         day=self.selected_date.day(),
                          hour=time_limit.stop.hour,
                          minute=time_limit.stop.minute)
         items = []
@@ -43,6 +52,12 @@ class mlhWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             start += timedelta(minutes=30)
 
         self.comboBox.addItems(items)
+
+    def add_appointment(self):
+        # TODO build datetime object and Scheudle object
+        #self.backend.add_appointment(Schedule())
+        pass
+
 
 class mlhGui():
     def __init__(self, mlh, children):
