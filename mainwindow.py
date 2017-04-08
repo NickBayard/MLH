@@ -32,6 +32,7 @@ class Ui_MainWindow(object):
         self.horizontalLayout_3.setSpacing(6)
         self.horizontalLayout_3.setObjectName("horizontalLayout_3")
         self.listWidget = QtWidgets.QListWidget(self.centralWidget)
+        self.listWidget.setSelectionMode(QtWidgets.QAbstractItemView.MultiSelection)
         self.listWidget.setObjectName("listWidget")
         self.horizontalLayout_3.addWidget(self.listWidget)
         self.verticalLayout_2 = QtWidgets.QVBoxLayout()

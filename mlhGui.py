@@ -2,7 +2,7 @@
 
 import sys
 from datetime import datetime, timedelta
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtGui, QtCore
 
 from mainwindow import Ui_MainWindow
 from ScheduleChecker import ScheduleChecker
@@ -14,20 +14,36 @@ class mlhWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.setupUi(self)
         self.backend = mlh
 
-        # Add children to list
-        for child in children:
-            self.listWidget.addItem(QtWidgets.QListWidgetItem(child))
+        self.listWidget.addItems(children)
 
-        self.fill_times()
+        self.set_date()
         self.calendarWidget.selectionChanged.connect(self.set_date)
+
+        # Initialize combobox
+        self.comboBox.currentIndexChanged.connect(self.set_time)
+        try:
+            self.comboBox.setCurrentIndex(self.comboBoxItems.index("09:00AM"))
+        except:
+            self.comboBox.setCurrentIndex(0)
+
+        self.set_duration()
+        self.spinBox.valueChanged.connect(self.set_duration)
 
         self.pushButton.clicked.connect(self.add_appointment)
 
+    def set_duration(self):
+        self.selected_duration = self.spinBox.value()
+        print("New duration : {}".format(self.selected_duration))
+
+    def set_time(self, index):
+        self.comboBoxIndex = index
+        print("New time index : {}".format(self.comboBoxIndex))
+
     def set_date(self):
         self.selected_date = self.calendarWidget.selectedDate()
-        self.fill_times()
+        print("New date : {}".format(self.selected_date))
 
-    def fill_times(self):
+        # Update times in combobox
         self.comboBox.clear()
 
         weekday = ScheduleChecker.WeekDay(self.selected_date.dayOfWeek() - 1)
@@ -45,16 +61,15 @@ class mlhWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                          day=self.selected_date.day(),
                          hour=time_limit.stop.hour,
                          minute=time_limit.stop.minute)
-        items = []
+        self.comboBoxItems = []
 
         while start <= stop:
-            items.append(start.strftime("%I:%M%p"))
+            self.comboBoxItems.append(start.strftime("%I:%M%p"))
             start += timedelta(minutes=30)
 
-        self.comboBox.addItems(items)
+        self.comboBox.addItems(self.comboBoxItems)
 
     def add_appointment(self):
-        # TODO build datetime object and Scheudle object
         #self.backend.add_appointment(Schedule())
         pass
 
