@@ -161,7 +161,7 @@ class Mlh():
     def run_gui(self):
         myGui = mlhGui.mlhGui(self, list(self.store.user_data.children.keys()))
 
-    def split_appointments(schedule):
+    def split_appointments(self, schedule):
         appointments = []
 
         def get_appt_by_type(type):
@@ -190,6 +190,7 @@ class Mlh():
                     appts.remove(new_appt)
 
         self.store.appointments.extend(appts)
+        self.persist.set_data()
 
 
 def main(args):
