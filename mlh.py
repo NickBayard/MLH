@@ -13,6 +13,7 @@ from Appointment import Appointment
 from Utils import int_input, input_with_quit
 from AppointmentHandler import AppointmentHandler
 from ScheduleChecker import ScheduleChecker
+import mlhGui
 
 
 def validate_children(children, persist):
@@ -86,20 +87,6 @@ def validate_args(args, persist):
         validate_datetime(args)
 
 
-def split_appointments(store, args):
-    appointments = []
-
-    def get_appt_by_type(type):
-        names = [name for name, info in store.user_data.children.items()
-                 if info.type == type and name in args.children]
-
-        if names:
-            appointments.append(Schedule(datetime=args.dt, duration=args.duration, children=names))
-
-    get_appt_by_type('child')
-    get_appt_by_type('infant')
-
-    return appointments
 
 
 def parse_args():
@@ -126,6 +113,8 @@ def parse_args():
                         help='Book appointments from the persistant store now')
     parser.add_argument('-p', dest='print_store', action='store_true',
                         help='Print the contents of the persistant store')
+    parser.add_argument('-g', dest='gui', action='store_true',
+                        help='Start MLH GUI')
 
     return parser.parse_args()
 
@@ -148,44 +137,82 @@ def configure_logging(log_level):
     logger.addHandler(fh)
     logger.addHandler(sh)
 
-def main(args):
-    configure_logging(args.log_level)
 
-    persist = Persist('db.pick')
+class Mlh():
+    def __init__(self):
+        self.persist = Persist('db.pick')
 
-    store = persist.get_data()
-
-    if args.print_store:
-        print(store)
+        self.store = self.persist.get_data()
+    
+    def print_store(self):
+        print(self.store)
         return
 
-    if args.clear:
-        store.appointments.clear() 
-        persist.set_data()
+    def clear_store(self):
+        self.store.appointments.clear() 
+        self.persist.set_data()
         return
 
-    validate_args(args, store)
+    def run(self):
+        handler = AppointmentHandler(self.persist)
+        handler.run()
+        return
 
-    if args.new_appt:  # We want to schedule a new appointment
+    def run_gui(self):
+        myGui = mlhGui.mlhGui(self, list(self.store.user_data.children.keys()))
+
+    def split_appointments(self, schedule):
+        appointments = []
+
+        def get_appt_by_type(type):
+            names = [name for name, info in self.store.user_data.children.items()
+                    if info.type == type and name in schedule.children]
+
+            if names:
+                new_schedule = copy(schedule)
+                new_schedule.children = names
+                appointments.append(new_schedule)
+
+        get_appt_by_type('child')
+        get_appt_by_type('infant')
+
+        return appointments
+
+    def add_appointment(self, schedule):
         # If an appointment was specified with children and infants,
         # it needs to be split into separate appointments
-        appts = split_appointments(store, args)
+        appts = self.split_appointments(schedule)
 
         # Remove appointments that already exist in the store
-        for appt in store.appointments:
+        for appt in self.store.appointments:
             for new_appt in copy(appts):
                 if new_appt == appt:
                     appts.remove(new_appt)
 
-        store.appointments.extend(appts)
+        self.store.appointments.extend(appts)
+        self.persist.set_data()
 
-        persist.set_data()
+
+def main(args):
+    configure_logging(args.log_level)
+    app = Mlh()
+
+    if args.print_store:
+        app.print_store()
+
+    if args.clear:
+        app.clear_store()
 
     # book all available scheduled appointments
     if args.execute:
-        handler = AppointmentHandler(persist)
-        handler.run()
+        app.run()
 
+    if args.gui:
+        app.run_gui()
+    else:
+        validate_args(args, app.store)
+        if args.new_appt:  # We want to schedule a new appointment
+            app.add_appointment(Schedule(args.dt, args.duration, args.children))
 
 if __name__ == '__main__':
     main(parse_args())
