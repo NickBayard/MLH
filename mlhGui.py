@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import sys
+import logging
 from collections import namedtuple
 from datetime import datetime, timedelta, time
 from PyQt5 import QtWidgets, QtGui, QtCore
@@ -16,6 +17,7 @@ class mlhWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         super().__init__(parent)
         self.setupUi(self)
         self.backend = mlh
+        self.logger = logging.getLogger('mlh_logger')
 
         #init children list
         self.selected_children = None
@@ -23,20 +25,10 @@ class mlhWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.listWidget.itemSelectionChanged.connect(self.set_children)
 
         #init calendar and time/combobox
+        self.selected_time = None
         self.set_date()
         self.calendarWidget.selectionChanged.connect(self.set_date)
-
-        # Initialize combobox
         self.comboBox.currentIndexChanged.connect(self.set_time)
-
-        time_found = False
-        for index, timeItem in enumerate(self.comboBoxItems):
-            if timeItem.timestr == "09:00AM":
-                self.comboBox.setCurrentIndex(index)
-                time_found = True
-
-        if not time_found:
-            self.comboBox.setCurrentIndex(0)
 
         #init duration
         self.set_duration()
@@ -46,15 +38,15 @@ class mlhWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def set_children(self):
         self.selected_children = [item.text() for item in self.listWidget.selectedItems()]
-        print("New children : {}".format(self.selected_children))
+        self.logger.debug("New children : {}".format(self.selected_children))
 
     def set_duration(self):
         self.selected_duration = self.spinBox.value()
-        print("New duration : {}".format(self.selected_duration))
+        self.logger.debug("New duration : {}".format(self.selected_duration))
 
     def set_time(self, index):
-        self.selected_time = self.comboBoxItems[index].dt
-        print("New time : {}".format(self.selected_time))
+        self.selected_time = self.comboBoxItems[index]
+        self.logger.debug("New time : {}".format(self.selected_time.dt))
 
     def set_date(self):
         # TODO covert selected date to datetime
@@ -63,10 +55,9 @@ class mlhWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                                       month=date.month(),
                                       day=date.day())
 
-        print("New date : {}".format(self.selected_date))
+        self.logger.debug("New date : {}".format(self.selected_date))
 
         # Update times in combobox
-        self.comboBox.clear()
 
         weekday = ScheduleChecker.WeekDay(self.selected_date.weekday())
 
@@ -91,10 +82,22 @@ class mlhWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             # The dict keys are the index of list items
             start += timedelta(minutes=30)
 
+        # Set the comboBox selected index
+        # If there was a previously selected time, use that. Otherwise, default to 9am
+        timestamp = self.selected_time.timestr if self.selected_time else "09:00AM"
+
+        new_index = 0
+        for index, timeItem in enumerate(self.comboBoxItems):
+            if timeItem.timestr == timestamp:
+                new_index = index
+                break
+
+        self.comboBox.clear()
         self.comboBox.addItems([item.timestr for item in self.comboBoxItems])
+        self.comboBox.setCurrentIndex(new_index)
 
     def add_appointment(self):
-        self.backend.add_appointment(Schedule(datetime=self.selected_time,
+        self.backend.add_appointment(Schedule(datetime=self.selected_time.dt,
                                               duration=self.selected_duration,
                                               children=self.selected_children))
 
