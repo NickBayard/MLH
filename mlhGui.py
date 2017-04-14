@@ -4,6 +4,7 @@ import sys
 import logging
 from collections import namedtuple
 from dialog import Ui_ConfirmDialog
+from view_appts import Ui_ViewAppointments
 from datetime import datetime, timedelta, time
 from PyQt5 import QtWidgets, QtGui, QtCore
 
@@ -108,9 +109,8 @@ class mlhWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             children_str = "{}, and {}".format(first_children, self.selected_children[-1])
 
         datetime_str = self.selected_time.dt.strftime("%A, %B %m at %I:%M%p")
-        label = "Do you wish to add an appointment for "
-        label += "{} on {} for {} minutes".format(children_str, datetime_str, self.selected_duration)
-        dialog = ApptConfirmDialog(label, self)
+        label = "{} on {} for {} minutes".format(children_str, datetime_str, self.selected_duration)
+        dialog = ApptConfirmDialog(self.appointment_confirmed, label, self)
         dialog.show()
 
     def appointment_confirmed(self):
@@ -120,21 +120,45 @@ class mlhWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
     def view_appointments(self):
+        # TODO send list of appointments to new window to display
+        view_appointments = ViewAppointments(self.remove_appointments)
+        view_appointments.show()
+
+    def remove_appointments(self, appointments):
+        #TODO remove list of appointments
         pass
 
 class ApptConfirmDialog(QtWidgets.QDialog, Ui_ConfirmDialog):
-    def __init__(self, label='', parent=None):
+    def __init__(self, confirm, label='', parent=None):
         super().__init__(parent)
         self.setupUi(self)
-        self.parent = parent
-        self.appointmentLabel.setText(label)
+        self.confirm = confirm
+        self.appointmentLabel.setText("Do you wish to add an appointment for")
+        self.appointmentLabel2.setText(label)
 
     def accept(self):
-        self.parent.appointment_confirmed()
+        self.confirm()
         self.hide()
 
     def reject(self):
         self.hide()
+
+
+class ViewAppointments(QtWidgets.QWidget, Ui_ViewAppointments):
+    def __init__(self, remove, parent=None):
+        super().__init__(parent)
+        self.setupUi(self)
+        self.removeApptButton.clicked.connect(self.remove)
+        self.appointmentList.itemSelectionChanged.connect(self.set_remove_list)
+        self.remove_appointments = remove
+
+        #TODO populate list of appointments
+
+    def remove(self):
+        self.remove_appointments(self.remove_list)
+
+    def set_remove_list(self):
+        self.remove_list = [item.text() for item in self.appointmentList.selectedItems()]
 
 
 class mlhGui():
