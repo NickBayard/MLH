@@ -1,22 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>Form</class>
- <widget class="QWidget" name="Form">
-  <property name="windowModality">
-   <enum>Qt::WindowModal</enum>
-  </property>
+ <class>ViewAppointments</class>
+ <widget class="QDialog" name="ViewAppointments">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>737</width>
-    <height>597</height>
+    <width>400</width>
+    <height>300</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>Dialog</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout_2">
+  <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
@@ -33,7 +30,7 @@
       </spacer>
      </item>
      <item>
-      <widget class="QPushButton" name="removeApptButton">
+      <widget class="QPushButton" name="removeAppointmentsButton">
        <property name="text">
         <string>Remove</string>
        </property>

@@ -121,7 +121,7 @@ class mlhWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def view_appointments(self):
         # TODO send list of appointments to new window to display
-        view_appointments = ViewAppointments(self.remove_appointments)
+        view_appointments = ViewAppointments(self.remove_appointments, self)
         view_appointments.show()
 
     def remove_appointments(self, appointments):
@@ -144,11 +144,11 @@ class ApptConfirmDialog(QtWidgets.QDialog, Ui_ConfirmDialog):
         self.hide()
 
 
-class ViewAppointments(QtWidgets.QWidget, Ui_ViewAppointments):
+class ViewAppointments(QtWidgets.QDialog, Ui_ViewAppointments):
     def __init__(self, remove, parent=None):
         super().__init__(parent)
         self.setupUi(self)
-        self.removeApptButton.clicked.connect(self.remove)
+        self.removeAppointmentsButton.clicked.connect(self.remove)
         self.appointmentList.itemSelectionChanged.connect(self.set_remove_list)
         self.remove_appointments = remove
 
