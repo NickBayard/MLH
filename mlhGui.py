@@ -150,7 +150,8 @@ class ViewAppointments(QtWidgets.QDialog, Ui_ViewAppointments):
         self.appointmentList.itemSelectionChanged.connect(self.set_remove_list)
 
         self.appointments = appointments # keep a copy of the appointments
-        itemsToAdd = [appt.datetime.strftime("%a, %b %m @ %H:%M") for appt in appointments]
+        itemsToAdd = ["{} for {}".format(appt.datetime.strftime("%a, %b %d @ %H:%M"),
+                                         ", ".join(appt.children)) for appt in appointments]
         self.appointmentList.addItems(itemsToAdd)
 
     def remove(self):
@@ -163,7 +164,6 @@ class ViewAppointments(QtWidgets.QDialog, Ui_ViewAppointments):
         # Collect the row numbers of the selected items.  These will be removed from
         # self.appointments
         self.remove_list = [self.appointmentList.row(item) for item in self.appointmentList.selectedItems()]
-        print("remove_list : {}".format(self.remove_list))
 
 
 class mlhGui():

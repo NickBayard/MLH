@@ -194,7 +194,7 @@ class Mlh():
 
     def remove_appointments(self, indexes=[]):
         for index in sorted(indexes, reverse=True):
-            self.store.appointments.remove(index)
+            self.store.appointments.pop(index)
 
         self.persist.set_data()
 
