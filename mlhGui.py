@@ -52,7 +52,6 @@ class mlhWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.logger.debug("New time : {}".format(self.selected_time.dt))
 
     def set_date(self):
-        # TODO covert selected date to datetime
         date = self.calendarWidget.selectedDate()
         self.selected_date = datetime(year=date.year(),
                                       month=date.month(),
@@ -108,7 +107,7 @@ class mlhWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             first_children = ', '.join([child for child in self.selected_children[:-1]])
             children_str = "{}, and {}".format(first_children, self.selected_children[-1])
 
-        datetime_str = self.selected_time.dt.strftime("%A, %B %m at %I:%M%p")
+        datetime_str = self.selected_time.dt.strftime("%A, %B %d at %I:%M%p")
         label = "{} on {} for {} minutes".format(children_str, datetime_str, self.selected_duration)
         dialog = ApptConfirmDialog(self.appointment_confirmed, label, self)
         dialog.show()
@@ -118,15 +117,13 @@ class mlhWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                                               duration=self.selected_duration,
                                               children=self.selected_children))
 
-
     def view_appointments(self):
-        # TODO send list of appointments to new window to display
-        view_appointments = ViewAppointments(self.remove_appointments, self)
+        view_appointments = ViewAppointments(self.remove_appointments,
+                                             self.backend.store.appointments, self)
         view_appointments.show()
 
     def remove_appointments(self, appointments):
-        #TODO remove list of appointments
-        pass
+        self.backend.remove_appointments(appointments)
 
 class ApptConfirmDialog(QtWidgets.QDialog, Ui_ConfirmDialog):
     def __init__(self, confirm, label='', parent=None):
@@ -145,20 +142,28 @@ class ApptConfirmDialog(QtWidgets.QDialog, Ui_ConfirmDialog):
 
 
 class ViewAppointments(QtWidgets.QDialog, Ui_ViewAppointments):
-    def __init__(self, remove, parent=None):
+    def __init__(self, remove, appointments=[], parent=None):
         super().__init__(parent)
         self.setupUi(self)
+        self.remove_appointments = remove
         self.removeAppointmentsButton.clicked.connect(self.remove)
         self.appointmentList.itemSelectionChanged.connect(self.set_remove_list)
-        self.remove_appointments = remove
 
-        #TODO populate list of appointments
+        self.appointments = appointments # keep a copy of the appointments
+        itemsToAdd = [appt.datetime.strftime("%a, %b %m @ %H:%M") for appt in appointments]
+        self.appointmentList.addItems(itemsToAdd)
 
     def remove(self):
         self.remove_appointments(self.remove_list)
 
+        for row in self.remove_list:
+            self.appointmentList.takeItem(row)
+
     def set_remove_list(self):
-        self.remove_list = [item.text() for item in self.appointmentList.selectedItems()]
+        # Collect the row numbers of the selected items.  These will be removed from
+        # self.appointments
+        self.remove_list = [self.appointmentList.row(item) for item in self.appointmentList.selectedItems()]
+        print("remove_list : {}".format(self.remove_list))
 
 
 class mlhGui():

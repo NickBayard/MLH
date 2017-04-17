@@ -192,6 +192,12 @@ class Mlh():
         self.store.appointments.extend(appts)
         self.persist.set_data()
 
+    def remove_appointments(self, indexes=[]):
+        for index in sorted(indexes, reverse=True):
+            self.store.appointments.remove(index)
+
+        self.persist.set_data()
+
 
 def main(args):
     configure_logging(args.log_level)
