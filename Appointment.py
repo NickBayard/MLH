@@ -28,6 +28,10 @@ class ChildTypeError(AppointmentError):
     pass
 
 
+class SelectChildrenError(AppointmentError):
+    pass
+
+
 class SelectDateError(AppointmentError):
     pass
 
@@ -100,6 +104,7 @@ class Appointment:
                 self.collect_available_dates()
 
                 if self.appt.datetime.date() in self.available_dates:
+                    self.select_children()
                     self.select_date(self.appt.datetime)
                 else:
                     raise UnableToBookAppointmentError
@@ -220,13 +225,20 @@ class Appointment:
                                                 minute=int(time) % 60)
                                         for time in formatted_times])
 
-    def select_date(self, date):
-        self.logger.debug("{}".format(date))
+    def select_children(self):
+        self.logger.debug("enter")
 
         try:
             for child in self.appt.children:
                 self.browser.check(self.child_ids[child])
+                sleep(3)
+        except:
+            raise SelectChildrenError
 
+    def select_date(self, date):
+        self.logger.debug("{}".format(date))
+
+        try:
             self.browser.click_link_by_text(date.day)
         except:
             raise SelectDateError(date)
