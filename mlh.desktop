@@ -1,9 +1,0 @@
-[Desktop Entry]
-Version=1.0
-Type=Application
-Terminal=false
-Exec=bash /home/nick/dev/mlh/release/runGui.sh
-Name=Mothers Little Helper
-Comment=Book an appointment at Paul Derda Rec Center
-Icon=/usr/share/icons/Numix-Circle/48/apps/python.svg
-Categories=GNOME;GTK;Utility
