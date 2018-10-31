@@ -1,7 +1,7 @@
 import sys
 import pdb
 import logging
-from time import sleep
+from time import sleep, time
 from datetime import datetime, timedelta
 
 from splinter import Browser
@@ -93,6 +93,7 @@ class Appointment:
             #retry = 0
             #while retry < RETRY_COUNT:
             try:
+                sleep(2)
                 self.select_appointments()
                 sleep(2)
                 self.set_duration()
@@ -105,6 +106,7 @@ class Appointment:
 
                 if self.appt.datetime.date() in self.available_dates:
                     self.select_children()
+                    sleep(4)
                     self.select_date(self.appt.datetime)
                 else:
                     raise UnableToBookAppointmentError
@@ -145,9 +147,10 @@ class Appointment:
         try:
             self.browser.fill('loginname', self.store.user_data.user)
             self.browser.fill('password', self.store.user_data.password)
+            sleep(1)
             self.browser.find_by_value('Log In').click()
-        except:
-            raise LoginError
+        except Exception as ex:
+            raise LoginError(ex)
 
     def close(self):
         self.browser.click_link_by_partial_href('logout')
@@ -158,15 +161,15 @@ class Appointment:
         self.logger.debug("enter")
         try:
             self.browser.click_link_by_href(self.url + 'appointments')
-        except:
-            raise ApptLinkError
+        except Exception as ex:
+            raise ApptLinkError(ex)
 
     def set_duration(self):
         self.logger.debug("enter")
         try:
             self.browser.find_by_name('service_id').select(self.durations[self.appt.duration])
-        except:
-            raise DurationError
+        except Exception as ex:
+            raise DurationError(ex)
 
     def select_child_type(self):
         self.logger.debug("enter")
@@ -179,8 +182,8 @@ class Appointment:
             # as the key to the user_data.children dictionary to look up the type
             child_type = self.store.user_data.children[self.appt.children[0]].type
             self.browser.find_by_name('e_id').select(child_types[child_type])
-        except:
-            raise ChildTypeError
+        except Exception as ex:
+            raise ChildTypeError(ex)
 
     def collect_child_ids(self):
         self.logger.debug('enter')
@@ -219,29 +222,29 @@ class Appointment:
         formatted_times = self.parser.get_available_times(self.browser.html)
         self.logger.debug("formatted times {}".format(formatted_times))
         self.available_times.extend([datetime(year=self.appt.datetime.year,
-                                                month=self.appt.datetime.month,
-                                                day=self.appt.datetime.day,
-                                                hour=int(int(time) / 60),
-                                                minute=int(time) % 60)
-                                        for time in formatted_times])
+                                              month=self.appt.datetime.month,
+                                              day=self.appt.datetime.day,
+                                              hour=int(int(time) / 60),
+                                              minute=int(time) % 60)
+                                     for time in formatted_times])
 
     def select_children(self):
         self.logger.debug("enter")
 
         try:
             for child in self.appt.children:
+                sleep(4)
                 self.browser.check(self.child_ids[child])
-                sleep(3)
-        except:
-            raise SelectChildrenError
+        except Exception as ex:
+            raise SelectChildrenError(ex)
 
     def select_date(self, date):
         self.logger.debug("{}".format(date))
 
         try:
             self.browser.click_link_by_text(date.day)
-        except:
-            raise SelectDateError(date)
+        except Exception as ex:
+            raise SelectDateError(f'{ex}: {date}')
 
     def select_time(self):
         self.logger.debug("enter")
@@ -250,17 +253,17 @@ class Appointment:
             time_string = self.appt.datetime.strftime('%I').lstrip('0') + \
                           self.appt.datetime.strftime(':%M') + \
                           self.appt.datetime.strftime('%p').lower()
-            xpath = "//tr[td='{}']/td/font/form[@name='gridSubmitForm']/a".format(time_string)
+            xpath = "//tr[td='{}']/td/form[@name='gridSubmitForm']/a".format(time_string)
             self.browser.find_by_xpath(xpath).click()
-        except:
-            raise SelectTimeError
+        except Exception as ex:
+            raise SelectTimeError(ex)
 
     def finalize_appointment(self):
         self.logger.debug("enter")
         try:
-            self.browser.find_by_name('finalize_appt').click() 
-        except:
-            raise FinalizeError
+            self.browser.find_by_name('finalize_appt').click()
+        except Exception as ex:
+            raise FinalizeError(ex)
 
     def verify_appointment(self):
         self.logger.debug("enter")
@@ -272,4 +275,4 @@ class Appointment:
                     self.appt.datetime.strftime('%p').lower()
 
         if not self.browser.find_link_by_partial_text(link_text):
-            raise VerifyError
+            raise VerifyError(f'Cant find {link_text}')

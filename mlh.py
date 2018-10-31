@@ -87,8 +87,6 @@ def validate_args(args, persist):
         validate_datetime(args)
 
 
-
-
 def parse_args():
     parser = argparse.ArgumentParser(
                 description='''Utility for advanced booking of child sitting
@@ -103,9 +101,9 @@ def parse_args():
     parser.add_argument('-t', dest='time', metavar='HHMM',
                         help='''Specify the time to book.  HH is 00-23.''')
     parser.add_argument('-r', dest='duration', metavar='MINUTES', type=int,
-                        choices=list(Appointment.durations.keys()), 
+                        choices=list(Appointment.durations.keys()),
                         help='''Specfiy the duration of the appointment.''')
-    parser.add_argument('-x', dest='clear', action='store_true', 
+    parser.add_argument('-x', dest='clear', action='store_true',
                         help='Clear appointments that have yet to be booked.')
     parser.add_argument('-l', dest='log_level', choices=['debug', 'info'], default='info',
                         help='log level')
@@ -133,7 +131,7 @@ def configure_logging(log_level):
 
     fh.setFormatter(fileFormatter)
     sh.setFormatter(streamFormatter)
-    
+
     logger.addHandler(fh)
     logger.addHandler(sh)
 
@@ -143,13 +141,13 @@ class Mlh():
         self.persist = Persist('db.pick')
 
         self.store = self.persist.get_data()
-    
+
     def print_store(self):
         print(self.store)
         return
 
     def clear_store(self):
-        self.store.appointments.clear() 
+        self.store.appointments.clear()
         self.persist.set_data()
         return
 
