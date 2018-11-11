@@ -35,7 +35,11 @@ class AppointmentHandler:
     def run(self):
         # Copy items in appointments that can possibly be booked
         # at this time into schedule
+        if not self.appointments:
+            return
+
         schedule = []
+
         for index, appt in enumerate(copy(self.appointments)):
             # Filter out appointments that aren't within reasonable hours
             try:

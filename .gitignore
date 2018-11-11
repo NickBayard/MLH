@@ -96,3 +96,8 @@ log
 
 # ctags
 tags
+
+*.bak
+*.sh
+*.desktop
+.idea/
