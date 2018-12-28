@@ -49,6 +49,9 @@ class AppointmentHandler:
                 # This appointment has passed.  Purge from the list
                 self.appointments.pop(index)
 
+        if not schedule:  # No appointments are bookable
+            return
+
         self.appt = Appointment(self.store, schedule)
 
         try:
