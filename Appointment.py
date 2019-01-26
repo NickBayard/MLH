@@ -93,7 +93,7 @@ class Appointment:
             #retry = 0
             #while retry < RETRY_COUNT:
             try:
-                sleep(2)
+                sleep(4)
                 self.select_appointments()
                 sleep(2)
                 self.set_duration()
