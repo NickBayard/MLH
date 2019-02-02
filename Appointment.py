@@ -7,6 +7,8 @@ from datetime import datetime, timedelta
 from splinter import Browser
 
 from Parser import Parser, ParseChildIdError, ParseAvailableDatesError
+from Utils import poll_on_method
+
 
 class AppointmentError(Exception):
     pass
@@ -54,6 +56,7 @@ class VerifyError(AppointmentError):
 
 logging.getLogger('selenium').setLevel(logging.WARNING)
 
+
 class Appointment:
     """The Appointment is the workhorse of this application.  It will
     attempt to book a child sitting appointment  or appointments at
@@ -78,62 +81,42 @@ class Appointment:
         self.logger = logging.getLogger('mlh_logger')
 
     def book(self):
-        first_pass = True
-        #RETRY_COUNT = 5
-
         self.browser.visit(self.url)
 
-        try:
-            self.login()
-        except Exception as ex:
-            raise ex
+        self.login()
 
         for self.appt in self.appointments:
             self.logger.info("Booking appointment\n{}".format(self.appt))
-            #retry = 0
-            #while retry < RETRY_COUNT:
             try:
-                sleep(2)
-                self.select_appointments()
-                sleep(2)
-                self.set_duration()
-                sleep(3)
-                self.select_child_type()
-                sleep(5)
-                self.collect_child_ids()
+                poll_on_method(self.select_appointments)
+                poll_on_method(self.set_duration)
+                poll_on_method(self.select_child_type)
+                poll_on_method(self.collect_child_ids)
 
-                self.collect_available_dates()
+                poll_on_method(self.collect_available_dates)
 
-                if self.appt.datetime.date() in self.available_dates:
-                    self.select_children()
-                    sleep(4)
-                    self.select_date(self.appt.datetime)
-                else:
+                if self.appt.datetime.date() not in self.available_dates:
                     raise UnableToBookAppointmentError
 
-                sleep(6)
-                self.collect_available_times()
-                if self.appt.datetime in self.available_times:
-                    self.select_time()
-                    sleep(3)
-                    self.finalize_appointment()
-                    sleep(5)
-                    self.verify_appointment()
+                poll_on_method(self.select_children)
+                poll_on_method(self.select_date, self.appt.datetime)
 
-                    # Successfully booked appointment
-                    yield True, self.appt
-                    #break # from While retry loop
-                else:
+                poll_on_method(self.collect_available_times)
+
+                if self.appt.datetime not in self.available_times:
                     raise UnableToBookAppointmentError
+
+                poll_on_method(self.select_time)
+                poll_on_method(self.finalize_appointment)
+                poll_on_method(self.verify_appointment)
+
+                # Successfully booked appointment
+                yield True, self.appt
 
                 sleep(1)  # Wait for a bit before booking the next appointment
 
             except Exception as ex:
-                #if ex is UnableToBookAppointmentError or retry >= RETRY_COUNT:
                 yield ex, self.appt
-                #break # from While retry loop
-                #else:
-                    #retry += 1
 
         # All appointments have been iterated through
         self.close()
@@ -143,17 +126,24 @@ class Appointment:
 
     def login(self):
         self.logger.debug("enter")
+        poll_on_method(self.login_fill)
+        poll_on_method(self.login_click)
 
+    def login_fill(self):
         try:
             self.browser.fill('loginname', self.store.user_data.user)
             self.browser.fill('password', self.store.user_data.password)
-            sleep(1)
+        except Exception as ex:
+            raise LoginError(ex)
+
+    def login_click(self):
+        try:
             self.browser.find_by_value('Log In').click()
         except Exception as ex:
             raise LoginError(ex)
 
     def close(self):
-        self.browser.click_link_by_partial_href('logout')
+        poll_on_method(self.browser.click_link_by_partial_href, 'logout')
         sleep(2)
         self.browser.quit()
 
@@ -233,8 +223,7 @@ class Appointment:
 
         try:
             for child in self.appt.children:
-                sleep(4)
-                self.browser.check(self.child_ids[child])
+                poll_on_method(self.browser.check, self.child_ids[child])
         except Exception as ex:
             raise SelectChildrenError(ex)
 
