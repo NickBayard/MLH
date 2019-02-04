@@ -1,4 +1,5 @@
 import sys
+from functools import wraps
 
 from time import sleep
 
@@ -29,19 +30,23 @@ def input_with_quit(txt):
     return response
 
 
-def poll_on_method(method, *args, timeout=20, **kwargs):
-    retry = 0
-    result = None
-    ex = Exception('Exception not correctly caught')
+def poll_on_method(method, timeout=20):
+    @wraps(method)
+    def wrapper(*args, **kwargs):
+        retry = 0
+        result = None
+        exc = Exception('Exception not correctly caught')
 
-    while retry < timeout:
-        try:
-            result = method(*args, **kwargs)
-            break
-        except Exception as ex:
-            sleep(1)
-            retry += 1
-    else:
-        raise ex
+        while retry < timeout:
+            try:
+                result = method(*args, **kwargs)
+                break
+            except Exception as ex:
+                retry += 1
+                exc = ex
+                sleep(1)
+        else:
+            raise exc
 
-    return result
+        return result
+    return wrapper

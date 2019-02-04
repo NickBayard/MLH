@@ -88,27 +88,27 @@ class Appointment:
         for self.appt in self.appointments:
             self.logger.info("Booking appointment\n{}".format(self.appt))
             try:
-                poll_on_method(self.select_appointments)
-                poll_on_method(self.set_duration)
-                poll_on_method(self.select_child_type)
-                poll_on_method(self.collect_child_ids)
+                self.select_appointments()
+                self.set_duration()
+                self.select_child_type()
+                self.collect_child_ids()
 
-                poll_on_method(self.collect_available_dates)
+                self.collect_available_dates()
 
                 if self.appt.datetime.date() not in self.available_dates:
                     raise UnableToBookAppointmentError
 
-                poll_on_method(self.select_children)
-                poll_on_method(self.select_date, self.appt.datetime)
+                self.select_children()
+                self.select_date(self.appt.datetime)
 
-                poll_on_method(self.collect_available_times)
+                self.collect_available_times()
 
                 if self.appt.datetime not in self.available_times:
                     raise UnableToBookAppointmentError
 
-                poll_on_method(self.select_time)
-                poll_on_method(self.finalize_appointment)
-                poll_on_method(self.verify_appointment)
+                self.select_time()
+                self.finalize_appointment()
+                self.verify_appointment()
 
                 # Successfully booked appointment
                 yield True, self.appt
@@ -125,10 +125,10 @@ class Appointment:
         return self.is_store_updated
 
     def login(self):
-        self.logger.debug("enter")
-        poll_on_method(self.login_fill)
-        poll_on_method(self.login_click)
+        self.login_fill()
+        self.login_click()
 
+    @poll_on_method
     def login_fill(self):
         try:
             self.browser.fill('loginname', self.store.user_data.user)
@@ -136,33 +136,35 @@ class Appointment:
         except Exception as ex:
             raise LoginError(ex)
 
+    @poll_on_method
     def login_click(self):
         try:
             self.browser.find_by_value('Log In').click()
         except Exception as ex:
             raise LoginError(ex)
 
+    @poll_on_method
     def close(self):
-        poll_on_method(self.browser.click_link_by_partial_href, 'logout')
+        self.browser.click_link_by_partial_href('logout')
         sleep(2)
         self.browser.quit()
 
+    @poll_on_method
     def select_appointments(self):
-        self.logger.debug("enter")
         try:
             self.browser.click_link_by_href(self.url + 'appointments')
         except Exception as ex:
             raise ApptLinkError(ex)
 
+    @poll_on_method
     def set_duration(self):
-        self.logger.debug("enter")
         try:
             self.browser.find_by_name('service_id').select(self.durations[self.appt.duration])
         except Exception as ex:
             raise DurationError(ex)
 
+    @poll_on_method
     def select_child_type(self):
-        self.logger.debug("enter")
         child_types = {
             'child': '782',
             'infant': '783'}
@@ -175,8 +177,8 @@ class Appointment:
         except Exception as ex:
             raise ChildTypeError(ex)
 
+    @poll_on_method
     def collect_child_ids(self):
-        self.logger.debug('enter')
         self.child_ids = {}
         ids_were_parsed = False
         for name, child in self.store.user_data.children.items():
@@ -200,12 +202,13 @@ class Appointment:
             for name, child in self.store.user_data.children.items():
                 self.child_ids[name] = child.id
 
+    @poll_on_method
     def collect_available_dates(self):
-        self.logger.debug("enter")
         self.available_dates = self.parser.get_available_dates(self.browser.html)
 
         self.logger.debug("available dates {}".format(self.available_dates))
 
+    @poll_on_method
     def collect_available_times(self):
         self.available_times = []
 
@@ -219,24 +222,25 @@ class Appointment:
                                      for time in formatted_times])
 
     def select_children(self):
-        self.logger.debug("enter")
+        for child in self.appt.children:
+            self.check_child_id(self.child_ids[child])
 
+    @poll_on_method
+    def check_child_id(self, child_id):
         try:
-            for child in self.appt.children:
-                poll_on_method(self.browser.check, self.child_ids[child])
+            self.browser.check(child_id)
         except Exception as ex:
             raise SelectChildrenError(ex)
 
+    @poll_on_method
     def select_date(self, date):
-        self.logger.debug("{}".format(date))
-
         try:
             self.browser.click_link_by_text(date.day)
         except Exception as ex:
             raise SelectDateError(f'{ex}: {date}')
 
+    @poll_on_method
     def select_time(self):
-        self.logger.debug("enter")
         try:
             # Format the time with leading 0s stripped and lowercase am/pm
             time_string = self.appt.datetime.strftime('%I').lstrip('0') + \
@@ -247,15 +251,15 @@ class Appointment:
         except Exception as ex:
             raise SelectTimeError(ex)
 
+    @poll_on_method
     def finalize_appointment(self):
-        self.logger.debug("enter")
         try:
             self.browser.find_by_name('finalize_appt').click()
         except Exception as ex:
             raise FinalizeError(ex)
 
+    @poll_on_method
     def verify_appointment(self):
-        self.logger.debug("enter")
         link_text = self.appt.datetime.strftime('%A, %B ') + \
                     self.appt.datetime.strftime('%d').lstrip('0') + \
                     self.appt.datetime.strftime(', %Y at ') + \
