@@ -1,6 +1,6 @@
-beautifulsoup4==4.6.0
-lxml==4.1.1
+beautifulsoup4
+lxml
 PyQt5==5.9
-selenium==3.5.0
-sip==4.19.3
-splinter==0.7.6
+selenium
+sip==4.19.7
+splinter
